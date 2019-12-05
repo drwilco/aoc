@@ -9,7 +9,7 @@ fn main() -> io::Result<()> {
   let first_wire = lines.next().unwrap()?;
   let second_wire = lines.next().unwrap()?;
 
-  let mut map: HashMap<i32, HashMap<i32, (i32, i32)>> = HashMap::new();
+  let mut map: HashMap<(i32, i32), (i32, i32)> = HashMap::new();
 
   let mut shortest_distance = 0;
   let mut x = 0;
@@ -27,9 +27,8 @@ fn main() -> io::Result<()> {
         "L" => x -= 1,
         _ => panic!("invalid direction: {}", direction),
       }
-      let column = map.entry(x).or_insert(HashMap::new());
       length += 1;
-      column.insert(y, (length, 0));
+      map.insert((x, y), (length, 0));
       distance -= 1;
     }
   }
@@ -48,9 +47,8 @@ fn main() -> io::Result<()> {
         "L" => x -= 1,
         _ => panic!("invalid direction: {}", direction),
       }
-      let column = map.entry(x).or_insert(HashMap::new());
       length += 1;
-      let result = column.entry(y).and_modify(|(_, second)| *second = length).or_insert((0, length));
+      let result = map.entry((x, y)).and_modify(|(_, second)| *second = length).or_insert((0, length));
       if result.0 > 0 && result.1 > 0 {
         let from_start = result.0 + result.1;
         if shortest_distance == 0 || from_start < shortest_distance {
