@@ -18,7 +18,7 @@ fn test(password: i32) -> bool {
     || (digits[1] != digits[2] && digits[2] == digits[3] && digits[3] != digits[4])
     || (digits[2] != digits[3] && digits[3] == digits[4] && digits[4] != digits[5])
     || (digits[3] != digits[4] && digits[4] == digits[5]) {
-    // no two adjacent digits are the same
+    // we have _a_ series of 2 adjecent equal digits, but no longer. 
     return true;
   }
   false
