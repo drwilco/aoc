@@ -31,9 +31,11 @@ enum ProgramState {
 }
 
 fn run_program(part: &mut PipelinePart) -> ProgramState {
+  let program = &mut part.program;
+  let ip = &mut part.ip;
   loop {
     let mut digits = Vec::new();
-    let mut remain = part.program[part.ip];
+    let mut remain = program[*ip];
     for i in (2..5).rev() {
       digits.push(remain / 10_isize.pow(i));
       remain = remain % 10_isize.pow(i);
@@ -45,28 +47,28 @@ fn run_program(part: &mut PipelinePart) -> ProgramState {
     match opcode {
       // in in out
       1 | 2 | 7 | 8 => {
-        let inval1 = param_to_value(&part.program, part.ip + 1, param_1_mode);
-        let inval2 = param_to_value(&part.program, part.ip + 2, param_2_mode);
+        let inval1 = param_to_value(&program, *ip + 1, param_1_mode);
+        let inval2 = param_to_value(&program, *ip + 2, param_2_mode);
         assert_eq!(param_3_mode, ParamMode::Position);
-        let outpos = part.program[part.ip + 3] as usize;
+        let outpos = program[*ip + 3] as usize;
         match opcode {
           // add
-          1 => part.program[outpos] = inval1 + inval2,
+          1 => program[outpos] = inval1 + inval2,
           // multiply
-          2 => part.program[outpos] = inval1 * inval2,
+          2 => program[outpos] = inval1 * inval2,
           // less than
-          7 => part.program[outpos] = match inval1 < inval2 {
+          7 => program[outpos] = match inval1 < inval2 {
             true => 1,
             false => 0,
           },
           // equals
-          8 => part.program[outpos] = match inval1 == inval2 {
+          8 => program[outpos] = match inval1 == inval2 {
             true => 1,
             false => 0,
           },
           _ => panic!("program error"),
         }
-        part.ip += 4;
+        *ip += 4;
       },
       3 => {
         // in
@@ -75,36 +77,36 @@ fn run_program(part: &mut PipelinePart) -> ProgramState {
           return ProgramState::NeedInput;
         }
         assert_eq!(param_1_mode, ParamMode::Position);
-        let outpos = part.program[part.ip + 1] as usize;
-        part.program[outpos] = part.input_queue.pop_front().unwrap();
-        part.ip += 2;
+        let outpos = program[*ip + 1] as usize;
+        program[outpos] = part.input_queue.pop_front().unwrap();
+        *ip += 2;
       }
       4 => {
         // out
         // write to output
-        let inval = param_to_value(&part.program, part.ip + 1, param_1_mode);
+        let inval = param_to_value(&program, *ip + 1, param_1_mode);
         part.output_queue.push_back(inval);
-        part.ip += 2;
+        *ip += 2;
       }
       5 | 6 => {
         // in in
-        let inval1 = param_to_value(&part.program, part.ip + 1, param_1_mode);
-        let inval2 = param_to_value(&part.program, part.ip + 2, param_2_mode);
+        let inval1 = param_to_value(&program, *ip + 1, param_1_mode);
+        let inval2 = param_to_value(&program, *ip + 2, param_2_mode);
         match opcode {
           5 => {
             // jump if true
             if inval1 != 0 {
-              part.ip = inval2 as usize;
+              *ip = inval2 as usize;
             } else {
-              part.ip += 3;
+              *ip += 3;
             }
           },
           6 => {
             // jump if false
             if inval1 == 0 {
-              part.ip = inval2 as usize;
+              *ip = inval2 as usize;
             } else {
-              part.ip += 3;
+              *ip += 3;
             }
           },
           _ => panic!("program error"),
