@@ -181,12 +181,13 @@ fn run_pipe(program: &Vec<isize>, a: isize, b: isize, c: isize, d: isize, e: isi
             pipeline[index].state = run_program(&mut pipeline[index]);
           },
           ProgramState::NeedInput => {
-            if pipeline[pipeline[index].previous].output_queue.len() > 0 {
-              let temp = pipeline[pipeline[index].previous].output_queue.pop_front().unwrap();
+            let previdx = pipeline[index].previous;
+            if pipeline[previdx].output_queue.len() > 0 {
+              let temp = pipeline[previdx].output_queue.pop_front().unwrap();
               pipeline[index].input_queue.push_back(temp);
               pipeline[index].state = ProgramState::Run;
             } else {
-              match pipeline[pipeline[index].previous].state {
+              match pipeline[previdx].state {
                 ProgramState::Exit => panic!("pipeline fucked: {:?}", pipeline),
                 _ => break, // go to the next part
               }
