@@ -175,7 +175,7 @@ struct PipelinePart {
   input_queue: VecDeque<isize>,
   output_queue: VecDeque<isize>,
   ip: usize,
-  previous: usize,
+  previous: Option<usize>,
   rel_base: isize,
 }
 
@@ -194,22 +194,24 @@ fn run_pipe(pipeline: &mut Vec<PipelinePart>) -> io::Result<()> {
             pipeline[index].state = run_program(&mut pipeline[index]);
           },
           ProgramState::NeedInput => {
-            let previdx = pipeline[index].previous;
-            if previdx == std::usize::MAX {
-              println!("please provide input: ");
-              let mut buf = String::new();
-              io::stdin().read_line(&mut buf).expect("input error");
-              let temp = buf.trim().parse().expect("not a number");
-              pipeline[index].input_queue.push_back(temp);
-            } else if pipeline[previdx].output_queue.len() > 0 {
-              let temp = pipeline[previdx].output_queue.pop_front().unwrap();
-              pipeline[index].input_queue.push_back(temp);
-              pipeline[index].state = ProgramState::Run;
-            } else {
-              match pipeline[previdx].state {
-                ProgramState::Exit => panic!("pipeline fucked: {:?}", pipeline),
-                _ => break, // go to the next part
-              }
+            match pipeline[index].previous {
+              None => {
+                println!("please provide input: ");
+                let mut buf = String::new();
+                io::stdin().read_line(&mut buf).expect("input error");
+                let temp = buf.trim().parse().expect("not a number");
+                pipeline[index].input_queue.push_back(temp);
+              },
+              Some(previdx) => if pipeline[previdx].output_queue.len() > 0 {
+                let temp = pipeline[previdx].output_queue.pop_front().unwrap();
+                pipeline[index].input_queue.push_back(temp);
+                pipeline[index].state = ProgramState::Run;
+              } else {
+                match pipeline[previdx].state {
+                  ProgramState::Exit => panic!("pipeline fucked: {:?}", pipeline),
+                  _ => break, // go to the next part
+                }
+              },
             }
           }
         }
@@ -232,7 +234,7 @@ fn main() -> io::Result<()> {
       input_queue: VecDeque::from(vec![2]),
       output_queue: VecDeque::new(),
       ip: 0,
-      previous: std::usize::MAX,
+      previous: None,
       rel_base: 0,
     },
   ];
@@ -255,7 +257,7 @@ mod tests {
         input_queue: VecDeque::new(),
         output_queue: VecDeque::new(),
         ip: 0,
-        previous: std::usize::MAX,
+        previous: None,
         rel_base: 0,
       },
     ];
@@ -274,7 +276,7 @@ mod tests {
         input_queue: VecDeque::new(),
         output_queue: VecDeque::new(),
         ip: 0,
-        previous: std::usize::MAX,
+        previous: None,
         rel_base: 0,
       },
     ];
@@ -293,7 +295,7 @@ mod tests {
         input_queue: VecDeque::new(),
         output_queue: VecDeque::new(),
         ip: 0,
-        previous: std::usize::MAX,
+        previous: None,
         rel_base: 0,
       },
     ];
@@ -324,7 +326,7 @@ fn pre_input_output(program: Vec<isize>) -> Vec<isize> {
       input_queue: VecDeque::new(),
       output_queue: VecDeque::new(),
       ip: 0,
-      previous: std::usize::MAX,
+      previous: None,
       rel_base: 0,
     },
   ];
@@ -371,10 +373,65 @@ fn simple_input_output(program: Vec<isize>, input: isize) -> isize {
       input_queue: VecDeque::from(vec![input]),
       output_queue: VecDeque::new(),
       ip: 0,
-      previous: std::usize::MAX,
+      previous: None,
       rel_base: 0,
     },
   ];
   run_pipe(&mut pipeline).expect("something went wrong");
   pipeline[0].output_queue.pop_front().unwrap()
+}
+
+#[test_case( vec![3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0], vec![4,3,2,1,0], 0 => 43210 ; "day 7 example 1")]
+#[test_case( vec![3,23,3,24,1002,24,10,24,1002,23,-1,23,101,5,23,23,1,24,23,23,4,23,99,0,0], vec![0,1,2,3,4],
+  0 => 54321 ; "day 7 example 2")]
+#[test_case( vec![3,31,3,32,1002,32,10,32,1001,31,-2,31,1007,31,0,33,1002,33,7,33,1,33,31,31,1,32,31,31,4,31,99,0,0,0],
+  vec![1,0,4,3,2], 0 => 65210 ; "day 7 example 3")]
+fn amp_chain(program: Vec<isize>, settings: Vec<isize>, input: isize) -> isize {
+  let mut pipeline: Vec<PipelinePart> = Vec::new();
+  for (i, s) in settings.iter().enumerate() {
+    pipeline.push(
+      PipelinePart{
+        program: program.to_vec(),
+        state: ProgramState::Run,
+        input_queue: VecDeque::from(vec![*s]),
+        output_queue: VecDeque::new(),
+        ip: 0,
+        previous: match i {
+          0 => None,
+          _ => Some(i - 1),
+        },
+        rel_base: 0,
+      }
+    );
+  }
+  pipeline[0].input_queue.push_back(input);
+  run_pipe(&mut pipeline).expect("something went wrong");
+  pipeline.last().unwrap().output_queue[0]
+}
+
+#[test_case( vec![3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26,27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5],
+  vec![9,8,7,6,5], 0 => 139629729 ; "day 7 example 4")]
+#[test_case( vec![3,52,1001,52,-5,52,3,53,1,52,56,54,1007,54,5,55,1005,55,26,1001,54,-5,54,1105,1,12,1,53,54,53,1008,54
+  ,0,55,1001,55,1,55,2,53,55,53,4,53,1001,56,-1,56,1005,56,6,99,0,0,0,0,10], vec![9,7,8,5,6], 0 => 18216 ; "day 7 example 5")]
+fn amp_chain_feedback(program: Vec<isize>, settings: Vec<isize>, input: isize) -> isize {
+  let mut pipeline: Vec<PipelinePart> = Vec::new();
+  for (i, s) in settings.iter().enumerate() {
+    pipeline.push(
+      PipelinePart{
+        program: program.to_vec(),
+        state: ProgramState::Run,
+        input_queue: VecDeque::from(vec![*s]),
+        output_queue: VecDeque::new(),
+        ip: 0,
+        previous: match i {
+          0 => Some(settings.len() - 1),
+          _ => Some(i - 1),
+        },
+        rel_base: 0,
+      }
+    );
+  }
+  pipeline[0].input_queue.push_back(input);
+  run_pipe(&mut pipeline).expect("something went wrong");
+  pipeline.last().unwrap().output_queue[0]
 }
