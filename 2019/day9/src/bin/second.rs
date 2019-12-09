@@ -246,7 +246,7 @@ mod tests {
   use super::*;
 
   #[test]
-  fn test_1() {
+  fn day9_test_1() {
     let program = vec![109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99];
     let mut pipeline = vec![
       PipelinePart{
@@ -265,7 +265,7 @@ mod tests {
   }
 
   #[test]
-  fn test_2() {
+  fn day9_test_2() {
     let program = vec![1102,34915192,34915192,7,4,7,99,0];
     let mut pipeline = vec![
       PipelinePart{
@@ -284,7 +284,7 @@ mod tests {
   }
 
   #[test]
-  fn test_3() {
+  fn day9_test_3() {
     let program = vec![104,1125899906842624,99];
     let mut pipeline = vec![
       PipelinePart{
@@ -301,4 +301,80 @@ mod tests {
     let output = pipeline[0].output_queue.pop_front().unwrap();
     assert_eq!(output, 1125899906842624);
   }
+
+}
+
+extern crate test_case;
+
+use test_case::test_case;
+
+#[test_case( vec![1,9,10,3,2,3,11,0,99,30,40,50] => vec![3500,9,10,70,2,3,11,0,99,30,40,50] ; "day 2 example 1")]
+#[test_case( vec![1,0,0,0,99] => vec![2,0,0,0,99] ; "day 2 example 2")]
+#[test_case( vec![2,3,0,3,99] => vec![2,3,0,6,99] ; "day 2 example 3")]
+#[test_case( vec![2,4,4,5,99,0] => vec![2,4,4,5,99,9801] ; "day 2 example 4")]
+#[test_case( vec![1,1,1,4,99,5,6,0,99] => vec![30,1,1,4,2,5,6,0,99] ; "day 2 example 5")]
+
+#[test_case( vec![1002,4,3,4,33] => vec![1002,4,3,4,99] ; "day 5 example 1")]
+#[test_case( vec![1101,100,-1,4,0] => vec![1101,100,-1,4,99] ; "day 5 example 2")]
+fn pre_input_output(program: Vec<isize>) -> Vec<isize> {
+  let mut pipeline = vec![
+    PipelinePart{
+      program: program.to_vec(),
+      state: ProgramState::Run,
+      input_queue: VecDeque::new(),
+      output_queue: VecDeque::new(),
+      ip: 0,
+      previous: std::usize::MAX,
+      rel_base: 0,
+    },
+  ];
+  run_pipe(&mut pipeline).expect("something went wrong");
+  pipeline[0].program.to_vec()
+}
+
+#[test_case( vec![3,9,8,9,10,9,4,9,99,-1,8], 8 => 1 ; "day 5 example 3a - equal to position mode")]
+#[test_case( vec![3,9,8,9,10,9,4,9,99,-1,8], 234 => 0 ; "day 5 example 3b - equal to position mode")]
+
+#[test_case( vec![3,9,7,9,10,9,4,9,99,-1,8], 7 => 1 ; "day 5 example 4a - less than position mode")]
+#[test_case( vec![3,9,7,9,10,9,4,9,99,-1,8], 8 => 0 ; "day 5 example 4b - less than position mode")]
+#[test_case( vec![3,9,7,9,10,9,4,9,99,-1,8], 9 => 0 ; "day 5 example 4c - less than position mode")]
+#[test_case( vec![3,9,7,9,10,9,4,9,99,-1,8], -9 => 1 ; "day 5 example 4d - less than position mode")]
+
+#[test_case( vec![3,3,1108,-1,8,3,4,3,99], 8 => 1 ; "day 5 example 5a - equal to immediate mode")]
+#[test_case( vec![3,3,1108,-1,8,3,4,3,99], 234 => 0 ; "day 5 example 5b - equal to immediate mode")]
+
+#[test_case( vec![3,3,1107,-1,8,3,4,3,99], 7 => 1 ; "day 5 example 6a - less than immediate mode")]
+#[test_case( vec![3,3,1107,-1,8,3,4,3,99], 8 => 0 ; "day 5 example 6b - less than immediate mode")]
+#[test_case( vec![3,3,1107,-1,8,3,4,3,99], 9 => 0 ; "day 5 example 6c - less than immediate mode")]
+#[test_case( vec![3,3,1107,-1,8,3,4,3,99], -9 => 1 ; "day 5 example 6d - less than immediate mode")]
+
+#[test_case( vec![3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9], 0 => 0 ; "day 5 example 7a - jump position mode")]
+#[test_case( vec![3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9], 1 => 1 ; "day 5 example 7b - jump position mode")]
+#[test_case( vec![3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9], -99 => 1 ; "day 5 example 7c - jump position mode")]
+
+#[test_case( vec![3,3,1105,-1,9,1101,0,0,12,4,12,99,1], 0 => 0 ; "day 5 example 8a - jump immediate mode")]
+#[test_case( vec![3,3,1105,-1,9,1101,0,0,12,4,12,99,1], 1 => 1 ; "day 5 example 8b - jump immediate mode")]
+#[test_case( vec![3,3,1105,-1,9,1101,0,0,12,4,12,99,1], -99 => 1 ; "day 5 example 8c - jump immediate mode")]
+
+#[test_case( vec![3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104
+  ,999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99], -99 => 999 ; "day 5 example 9a - long example")]
+#[test_case( vec![3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104
+  ,999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99], 8 => 1000 ; "day 5 example 9b - long example")]
+#[test_case( vec![3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104
+  ,999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99], 1337 => 1001 ; "day 5 example 9c - long example")]
+
+fn simple_input_output(program: Vec<isize>, input: isize) -> isize {
+  let mut pipeline = vec![
+    PipelinePart{
+      program: program.to_vec(),
+      state: ProgramState::Run,
+      input_queue: VecDeque::from(vec![input]),
+      output_queue: VecDeque::new(),
+      ip: 0,
+      previous: std::usize::MAX,
+      rel_base: 0,
+    },
+  ];
+  run_pipe(&mut pipeline).expect("something went wrong");
+  pipeline[0].output_queue.pop_front().unwrap()
 }
