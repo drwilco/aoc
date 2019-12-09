@@ -9,6 +9,43 @@ enum ParamMode {
   Relative,
 }
 
+#[derive(Debug)]
+enum ProgramState {
+  Run,
+  Exit,
+  NeedInput,
+}
+
+impl Default for ProgramState {
+    fn default() -> Self { ProgramState::Run }
+}
+
+#[derive(Debug)]
+enum OpCode {
+  Add = 1,
+  Multiply = 2,
+  Read = 3,
+  Write = 4,
+  JumpIfTrue = 5,
+  JumpIfFalse = 6,
+  LessThan = 7,
+  EqualTo = 8,
+  AdjustBase = 9,
+  Exit = 99,
+}
+use OpCode::*;
+
+#[derive(Debug, Default)]
+struct PipelinePart {
+  program: Vec<isize>,
+  state: ProgramState,
+  input_queue: VecDeque<isize>,
+  output_queue: VecDeque<isize>,
+  ip: usize,
+  previous: Option<usize>,
+  rel_base: isize,
+}
+
 fn param_mode(digit: isize) -> ParamMode {
   match digit {
       0 => ParamMode::Position,
@@ -39,28 +76,6 @@ fn param_to_value(program: &mut Vec<isize>, param_pos: usize, mode: ParamMode, r
     ParamMode::Immediate => program[param_pos],
   }
 }
-
-#[derive(Debug)]
-enum ProgramState {
-  Run,
-  Exit,
-  NeedInput,
-}
-
-#[derive(Debug)]
-enum OpCode {
-  Add = 1,
-  Multiply = 2,
-  Read = 3,
-  Write = 4,
-  JumpIfTrue = 5,
-  JumpIfFalse = 6,
-  LessThan = 7,
-  EqualTo = 8,
-  AdjustBase = 9,
-  Exit = 99,
-}
-use OpCode::*;
 
 fn in_in_out(opcode: OpCode, inval1: isize, inval2: isize) -> isize {
   match opcode {
@@ -168,17 +183,6 @@ fn run_program(part: &mut PipelinePart) -> ProgramState {
   ProgramState::Exit
 }
 
-#[derive(Debug)]
-struct PipelinePart {
-  program: Vec<isize>,
-  state: ProgramState,
-  input_queue: VecDeque<isize>,
-  output_queue: VecDeque<isize>,
-  ip: usize,
-  previous: Option<usize>,
-  rel_base: isize,
-}
-
 fn run_pipe(pipeline: &mut Vec<PipelinePart>) -> io::Result<()> {
   let mut exited = 0;
   while exited < pipeline.len() {
@@ -230,12 +234,8 @@ fn main() -> io::Result<()> {
   let mut pipeline = vec![
     PipelinePart{
       program: program.to_vec(),
-      state: ProgramState::Run,
       input_queue: VecDeque::from(vec![2]),
-      output_queue: VecDeque::new(),
-      ip: 0,
-      previous: None,
-      rel_base: 0,
+      ..Default::default()
     },
   ];
   run_pipe(&mut pipeline).expect("something went wrong");
@@ -257,12 +257,7 @@ mod tests {
     let mut pipeline = vec![
       PipelinePart{
         program: program.to_vec(),
-        state: ProgramState::Run,
-        input_queue: VecDeque::new(),
-        output_queue: VecDeque::new(),
-        ip: 0,
-        previous: None,
-        rel_base: 0,
+        ..Default::default()
       },
     ];
     run_pipe(&mut pipeline).expect("something went wrong");
@@ -276,12 +271,7 @@ mod tests {
     let mut pipeline = vec![
       PipelinePart{
         program: program.to_vec(),
-        state: ProgramState::Run,
-        input_queue: VecDeque::new(),
-        output_queue: VecDeque::new(),
-        ip: 0,
-        previous: None,
-        rel_base: 0,
+        ..Default::default()
       },
     ];
     run_pipe(&mut pipeline).expect("something went wrong");
@@ -295,12 +285,7 @@ mod tests {
     let mut pipeline = vec![
       PipelinePart{
         program: program.to_vec(),
-        state: ProgramState::Run,
-        input_queue: VecDeque::new(),
-        output_queue: VecDeque::new(),
-        ip: 0,
-        previous: None,
-        rel_base: 0,
+        ..Default::default()
       },
     ];
     run_pipe(&mut pipeline).expect("something went wrong");
@@ -320,12 +305,7 @@ mod tests {
     let mut pipeline = vec![
       PipelinePart{
         program: program.to_vec(),
-        state: ProgramState::Run,
-        input_queue: VecDeque::new(),
-        output_queue: VecDeque::new(),
-        ip: 0,
-        previous: None,
-        rel_base: 0,
+        ..Default::default()
       },
     ];
     run_pipe(&mut pipeline).expect("something went wrong");
@@ -367,12 +347,8 @@ mod tests {
     let mut pipeline = vec![
       PipelinePart{
         program: program.to_vec(),
-        state: ProgramState::Run,
         input_queue: VecDeque::from(vec![input]),
-        output_queue: VecDeque::new(),
-        ip: 0,
-        previous: None,
-        rel_base: 0,
+        ..Default::default()
       },
     ];
     run_pipe(&mut pipeline).expect("something went wrong");
@@ -390,15 +366,12 @@ mod tests {
       pipeline.push(
         PipelinePart{
           program: program.to_vec(),
-          state: ProgramState::Run,
           input_queue: VecDeque::from(vec![*s]),
-          output_queue: VecDeque::new(),
-          ip: 0,
           previous: match i {
             0 => None,
             _ => Some(i - 1),
           },
-          rel_base: 0,
+          ..Default::default()
         }
       );
     }
@@ -417,15 +390,12 @@ mod tests {
       pipeline.push(
         PipelinePart{
           program: program.to_vec(),
-          state: ProgramState::Run,
           input_queue: VecDeque::from(vec![*s]),
-          output_queue: VecDeque::new(),
-          ip: 0,
           previous: match i {
             0 => Some(settings.len() - 1),
             _ => Some(i - 1),
           },
-          rel_base: 0,
+          ..Default::default()
         }
       );
     }
