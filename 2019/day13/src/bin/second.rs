@@ -1,6 +1,9 @@
 use std::io;
 use std::fs;
 use std::fmt;
+use std::thread;
+use std::cmp::Ordering;
+use std::time::Duration;
 use std::collections::VecDeque;
 use std::collections::HashMap;
 
@@ -322,7 +325,7 @@ fn show_screen(console: &mut Console) {
         Some(0) => ' ',
         Some(1) => '#',
         Some(2) => '+',
-        Some(3) => '-',
+        Some(3) => '_',
         Some(4) => 'o',
         Some(_) => panic!("invalid TileID"),
         None => ' ',
@@ -331,6 +334,18 @@ fn show_screen(console: &mut Console) {
     }
     println!("");
   }
+}
+
+fn cheat(console: &mut Console) {
+  let paddle_x: isize = console.screen.iter().filter(|(&p, &t)| t == 3).map(|(&p, _)| p.x).sum();
+  let ball_x: isize = console.screen.iter().filter(|(&p, &t)| t == 4).map(|(&p, _)| p.x).sum();
+  thread::sleep(Duration::from_millis(50));
+  console.output_queue.truncate(0);
+  console.output_queue.push_back(match paddle_x.cmp(&ball_x) {
+    Ordering::Less => 1,
+    Ordering::Equal => 0,
+    Ordering::Greater => -1,
+  });
 }
 
 fn run_console(console: &mut Console) -> PartState {
@@ -361,6 +376,9 @@ fn run_console(console: &mut Console) -> PartState {
     };
     console.screen.insert(console.point, id);
     show_screen(console);
+    if id == 4 {
+      cheat(console);
+    }
     console.internal_state = ConsoleState::X;    
   }
   if console.internal_state == ConsoleState::Score {
@@ -375,7 +393,7 @@ fn run_console(console: &mut Console) -> PartState {
 }
 
 fn exit_console(console: &mut Console) -> PartState {
-  println!("{} blocks left", console.screen.values().filter(|&x| *x == 2).count());
+  println!("Final score: {}", console.score);
   PartState::Exit
 }
 
@@ -385,7 +403,6 @@ fn run_pipe(pipeline: &mut Vec<Box<dyn PipelinePart>>) -> io::Result<()> {
     exited = 0;
     for index in 0..pipeline.len() {
       loop {
-        println!("[{}]{:?}", index, pipeline);
         match pipeline[index].get_state() {
           PartState::Exit => {
             exited += 1;
@@ -439,7 +456,7 @@ fn main() -> io::Result<()> {
   let mut pipeline: Vec<Box<dyn PipelinePart>> = vec![
     Box::new(IntCode{
       program: program.to_vec(),
-      previous: None,
+      previous: Some(1),
       ..Default::default()
     }),
     Box::new(Console{
