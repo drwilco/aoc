@@ -96,64 +96,9 @@ fn gcd (mut a: isize, mut b: isize) -> isize {
   a
 }
 
-fn find_common_freq_gcd(input: Vec<isize>) -> isize {
-  let gcd = input.iter().fold(input[0], |a, b| gcd(a, *b));
-  println!("gcd: {}", gcd);
-  println!("{:?}", input.iter().map(|x| *x / gcd).collect::<Vec<isize>>());
-  //input.iter().map(|x| *x / gcd).product::<isize>()
-  find_common_frequency(input.iter().map(|x| *x / gcd).collect::<Vec<isize>>()) * gcd
+fn find_common_freq_gcd(a: isize, b: isize) -> isize {
+  a / gcd(a, b) * b
 }
-
-fn find_common_frequency(input: Vec<isize>) -> isize {
-  let mut output: Vec<isize> = input.to_vec();
-  let len = input.len();
-  let mut max: isize;
-  println!("input: {:?}", input);
-  let mut counter = 0;
-  while { max = *output.iter().max().unwrap(); max * (len as isize) != output.iter().sum() } {
-    counter += 1;
-    for i in 0..len {
-      if output[i] < max {
-        let diff = max - output[i];
-        output[i] = max - (diff % input[i]);
-        if output[i] < max {
-          output[i] += input[i];
-        }
-      }
-    }
-    if counter % 1_000_000 == 0 {
-      println!("current: {:?}", output);
-    }
-  }
-  println!("took {} cycles: common: {:?}", counter, output);
-  output[0]
-}
-/*
-fn compare_and_store(cycles: &mut Option<isize>, axis: Axis, moon: isize, moons: &Vec<Moon>,
-                      history: &Vec<Vec<Moon>>, cycle: isize) -> usize {
-  let update: bool;
-  match cycles {
-    Some(_) | None => 0,
-    None => {
-      update = match axis {
-        Axis::X => moon.position.x == initial.position.x
-                    && moon.velocity.x == initial.velocity.x,
-        Axis::Y => moon.position.y == initial.position.y
-                    && moon.velocity.y == initial.velocity.y,
-        Axis::Z => moon.position.z == initial.position.z
-                    && moon.velocity.z == initial.velocity.z,
-      };
-      if update {
-        println!("moon {:?} takes {} cycles to repeat on {:?} axis", initial.position, cycle, axis);
-        *cycles = Some(cycle);
-        1
-      } else {
-        0
-      }
-    }
-  }
-}
-*/
 
 fn find_cycle_1d(moons: &mut Vec<Moon1D>) -> isize {
   let mut cycle = 0;
@@ -178,7 +123,7 @@ fn find_cycle(moons: &mut Vec<Moon>) -> isize {
   let x_freq = find_cycle_1d(&mut x);
   let y_freq = find_cycle_1d(&mut y);
   let z_freq = find_cycle_1d(&mut z);
-  find_common_frequency(vec![x_freq, y_freq, z_freq])
+  find_common_freq_gcd(find_common_freq_gcd(x_freq, y_freq), z_freq)
 }
 
 fn main() -> io::Result<()> {
@@ -210,7 +155,7 @@ mod tests {
   #[test_case(vec![18, 6, 9, 9] => 18)]
   #[test_case(vec![924, 2772, 924, 2772] => 2772)]
   fn test_find_common_freq(input: Vec<isize>) -> isize {
-    find_common_freq_gcd(input)
+    input.iter().fold(input[0], |a, b| find_common_freq_gcd(a, *b))
   }
 
   #[test_case(6, 9 => 3)]
