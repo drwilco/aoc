@@ -11,7 +11,7 @@ enum ParamMode {
   Relative,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 enum PartState {
   Run,
   Exit,
@@ -464,7 +464,9 @@ mod tests {
         program: program.to_vec(),
         ..Default::default()
     };
-    intcode.run();
+    while intcode.get_state() == PartState::Run {
+      intcode.run();
+    }
     let output = intcode.output_queue.iter().map(|x| *x).collect::<Vec<isize>>();
     assert_eq!(program, output);
   }
