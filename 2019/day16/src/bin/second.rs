@@ -2,6 +2,7 @@ use std::fs;
 use std::io;
 use std::cmp;
 use std::time::Instant;
+use rayon::prelude::*;
 
 const BASE_PATTERN: [isize; 4] = [0, 1, 0, -1];
 
@@ -22,30 +23,35 @@ fn encode(input: &Vec<isize>, phases: usize) -> Vec<isize> {
     for i in 0..inlen {
       input[i] = output[i];
     }
-    for o in 0..inlen {
-//      let outputstart = Instant::now();
-      let mut total: isize = 0;
-      let o1 = o + 1;
-      for j in (o..inlen).step_by(o1) {
-        match generate_multiplier(j, o) {
-          1 => {
-            for i in j..cmp::min(inlen, j + o1) {
-              total += input[i];
-            }
-          },
-          -1 => {
-            for i in j..cmp::min(inlen, j + o1) {
-              total -= input[i];
-            }
-          },
-          _ => (),
+    const CHUNKLEN: usize = 10_000;
+    output.par_chunks_mut(CHUNKLEN).enumerate().for_each(|(chunknum, output)| {
+      let chunkstart = Instant::now();
+      for c in 0..output.len() {
+        let o = chunknum * CHUNKLEN + c;
+        let mut total: isize = 0;
+        let o1 = o + 1;
+        for j in (o..inlen).step_by(o1) {
+          match generate_multiplier(j, o) {
+            1 => {
+              for i in j..cmp::min(inlen, j + o1) {
+                total += input[i];
+              }
+            },
+            -1 => {
+              for i in j..cmp::min(inlen, j + o1) {
+                total -= input[i];
+              }
+            },
+            _ => (),
+          }
         }
+        output[c] = total.abs() % 10;
       }
-      output[o] = total.abs() % 10;
+      println!("chunk[{:?}] {:?}", chunknum, chunkstart.elapsed());
 //      if o % 10000 == 0 {
 //        println!("{} = {} [{:?}]", o, output[o], outputstart.elapsed());
 //      }
-    }
+    });
     println!("phase {:?} [{:?}]", p, phasestart.elapsed());
   }
   output
