@@ -65,12 +65,58 @@ fn repeat(input: Vec<isize>, times: usize) -> Vec<isize> {
   output
 }
 
-fn get_message(input: Vec<isize>, output: Vec<isize>) -> String {
+fn selective_output(mut input: Vec<isize>, needed_output: &Vec<usize>, phases: usize) -> Vec<isize> {
+  let inlen = input.len();
+  let mut output = Vec::with_capacity(inlen);
+  output.resize(inlen, isize::default());
+  const CHUNKLEN: usize = 1000;
+  if phases > 1 {
+    input = selective_output(input, &needed_output, phases - 1);
+  }
+  let phasestart = Instant::now();
+  let alltemp: Vec<(usize, isize)> = needed_output.par_chunks(CHUNKLEN).flat_map(|chunk| {
+    let chunktemp: Vec<(usize, isize)> = chunk.iter().map(|o| {
+      let mut total: isize = 0;
+      let o1 = *o + 1;
+      for j in (*o..inlen).step_by(o1) {
+        match generate_multiplier(j, *o) {
+          1 => {
+            for i in j..cmp::min(inlen, j + o1) {
+              total += input[i];
+            }
+          },
+          -1 => {
+            for i in j..cmp::min(inlen, j + o1) {
+              total -= input[i];
+            }
+          },
+          _ => (),
+        }
+      }
+      (*o, total.abs() % 10)
+    }).collect();
+    chunktemp
+  }).collect();
+  for temp in alltemp {
+    output[temp.0] = temp.1;
+  }
+  println!("phase {} done after {:?}", phases, phasestart.elapsed());
+  output
+}
+
+fn calc_message(input: Vec<isize>) -> String {
   let mut offset = input[0] as usize;
   for i in 1..7 {
     offset *= 10;
     offset += input[i] as usize;
   }
+  let mut needed_output: Vec<usize> = Vec::new();
+  let inlen = input.len();
+  for u in offset..inlen {
+    needed_output.push(u);
+  }
+  let needed_output = needed_output.iter().map(|x| *x).collect();
+  let output = selective_output(input, &needed_output, 100);
   let mut message = output[offset] as usize;
   for i in (offset+1)..(offset+8) {
     message *= 10;
@@ -88,8 +134,7 @@ fn main() -> io::Result<()> {
   println!("{:?}", input.len());
   let input = repeat(input, 10000);
   println!("{:?}", input.len());
-  let output = encode(&input, 100);
-  println!("{:?}", get_message(input, output));
+  println!("{:?}", calc_message(input));
   Ok(())
 }
 
@@ -131,15 +176,14 @@ mod tests {
     format!("{}{}{}{}{}{}{}{}", output[0], output[1], output[2], output[3], output[4], output[5], output[6], output[7])
   }
 
-  #[test_case("03036732577212944063491565474664", 100 => "84462026"; "example 1")]
-  #[test_case("02935109699940807407585447034323", 100 => "78725270"; "example 2")]
-  #[test_case("03081770884921959731165446850517", 100 => "53553731"; "example 3")]
-  fn test_part2(input: &str, cycles: usize) -> String {
+  #[test_case("03036732577212944063491565474664" => "84462026"; "example 1")]
+  #[test_case("02935109699940807407585447034323" => "78725270"; "example 2")]
+  #[test_case("03081770884921959731165446850517" => "53553731"; "example 3")]
+  fn test_part2(input: &str) -> String {
     let input = input.chars()
                 .map(|x| x.to_digit(10).unwrap() as isize)
                 .collect::<Vec<_>>();
     let input = repeat(input, 10000);
-    let output = encode(&input, cycles);
-    get_message(input, output)
+    calc_message(input)
   }
 }
