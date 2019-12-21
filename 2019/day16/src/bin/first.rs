@@ -15,11 +15,9 @@ fn encode(input: Vec<isize>, phases: usize) -> Vec<isize> {
   // top of the loop
   let mut output = input.to_vec();
   for _ in 0..phases {
-    for i in 0..input.len() {
-      input[i] = output[i];
-    }
-    for o in 0..input.len() {
-      output[o] = input.iter().enumerate().map(|(i, x)| *x * generate_multiplier(i, o)).sum::<isize>().abs() % 10;
+    input.copy_from_slice(&output);
+    for (o, outval) in output.iter_mut().enumerate() {
+      *outval = input.iter().enumerate().map(|(i, x)| *x * generate_multiplier(i, o)).sum::<isize>().abs() % 10;
     }
   }
   output
