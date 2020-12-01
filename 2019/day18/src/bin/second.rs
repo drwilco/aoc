@@ -95,7 +95,7 @@ fn string_to_data(string: &str) -> (TileMap, MapIndex, Vec<Point>) {
             }
             '@' => {
                 map.insert(point, TileType::Open);
-//                index.insert(TileType::Start, point);
+                //                index.insert(TileType::Start, point);
                 start.push(point);
             }
             'a'..='z' => {
@@ -171,10 +171,38 @@ fn find_keys(map: &TileMap, start: Vec<Point>) -> Vec<(Point, usize)> {
         steps += 1;
         for point in expand_from.iter() {
             map.insert(*point, TileType::Checked);
-            expand(&map, *point, Direction::North, &mut new_expand_from, &mut options, steps);
-            expand(&map, *point, Direction::South, &mut new_expand_from, &mut options, steps);
-            expand(&map, *point, Direction::East, &mut new_expand_from, &mut options, steps);
-            expand(&map, *point, Direction::West, &mut new_expand_from, &mut options, steps);
+            expand(
+                &map,
+                *point,
+                Direction::North,
+                &mut new_expand_from,
+                &mut options,
+                steps,
+            );
+            expand(
+                &map,
+                *point,
+                Direction::South,
+                &mut new_expand_from,
+                &mut options,
+                steps,
+            );
+            expand(
+                &map,
+                *point,
+                Direction::East,
+                &mut new_expand_from,
+                &mut options,
+                steps,
+            );
+            expand(
+                &map,
+                *point,
+                Direction::West,
+                &mut new_expand_from,
+                &mut options,
+                steps,
+            );
         }
         expand_from.truncate(0);
         expand_from.append(&mut new_expand_from);
@@ -210,7 +238,14 @@ fn approx_min_steps(map: &TileMap, index: &MapIndex, start: Vec<Point>, steps: u
     approx_min_steps(&submap, &index, keypos, steps + keysteps)
 }
 
-fn find_min_steps(map: &TileMap, index: &MapIndex, start: Vec<Point>, steps: usize, mut bound: usize, depth: usize) -> usize {
+fn find_min_steps(
+    map: &TileMap,
+    index: &MapIndex,
+    start: Vec<Point>,
+    steps: usize,
+    mut bound: usize,
+    depth: usize,
+) -> usize {
     let keys = find_keys(map, start);
     if keys.is_empty() {
         panic!("should not happen");
@@ -222,8 +257,8 @@ fn find_min_steps(map: &TileMap, index: &MapIndex, start: Vec<Point>, steps: usi
     }
     let mut min = usize::MAX;
     let mut minkeypos = keys[0].0;
-    let mut minkeysteps = keys[0].1; 
-//    println!("depth {} options {}", depth, keys.len());
+    let mut minkeysteps = keys[0].1;
+    //    println!("depth {} options {}", depth, keys.len());
     for (keypos, keysteps) in keys {
         if steps + keysteps > bound {
             continue;
@@ -269,7 +304,14 @@ fn find_min_steps(map: &TileMap, index: &MapIndex, start: Vec<Point>, steps: usi
     } else {
         panic!("somehow not a key");
     }
-    find_min_steps(&submap, &index, minkeypos, steps + minkeysteps, bound, depth + 1)
+    find_min_steps(
+        &submap,
+        &index,
+        minkeypos,
+        steps + minkeysteps,
+        bound,
+        depth + 1,
+    )
 }
 
 fn actual_main(input: &str) -> usize {
