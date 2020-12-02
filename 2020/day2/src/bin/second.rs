@@ -28,9 +28,10 @@ fn parse_line(input: &str) -> IResult<&str, (usize, usize, char, String)> {
 fn check_password(first: usize, second: usize, character: char, password: &str) -> bool {
     let password = password.as_bytes();
     let character = character as u8;
-    let first = password.get(first - 1).unwrap_or(&(' ' as u8));
-    let second = password.get(second - 1).unwrap_or(&(' ' as u8));
-    (character != *first && character == *second) || (character == *first && character != *second)
+    let first = password.get(first - 1);
+    let second = password.get(second - 1);
+    (first.map_or(false, |c| *c == character) && !second.map_or(false, |c| *c == character))
+        || (!first.map_or(false, |c| *c == character) && second.map_or(false, |c| *c == character))
 }
 
 fn check_passwords(password_list: &str) -> io::Result<usize> {
