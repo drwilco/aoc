@@ -59,7 +59,7 @@ mod tests {
     #[test_case(1, 3, 'a', "abcde" => true; "line1")]
     #[test_case(1, 3, 'b', "cdefg" => false; "line2")]
     #[test_case(2, 9, 'c', "ccccccccc" => false; "line3")]
-    fn first(first: usize, second: usize, character: char, password: &str) -> bool {
+    fn second(first: usize, second: usize, character: char, password: &str) -> bool {
         check_password(first, second, character, password)
     }
 }
