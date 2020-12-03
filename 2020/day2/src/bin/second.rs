@@ -41,8 +41,7 @@ fn check_passwords(password_list: &str) -> io::Result<usize> {
             let (_, (first, second, character, password)) = parse_line(&line).unwrap();
             check_password(first, second, character, &password)
         })
-        .collect::<Vec<_>>()
-        .len())
+        .count())
 }
 
 fn main() -> io::Result<()> {

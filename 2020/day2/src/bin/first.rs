@@ -33,16 +33,14 @@ fn check_passwords(password_list: &str) -> io::Result<usize> {
             let count = password
                 .chars()
                 .filter(|c| *c == character)
-                .collect::<Vec<char>>()
-                .len();
+                .count();
             if count >= min && count <= max {
                 Some(())
             } else {
                 None
             }
         })
-        .collect::<Vec<()>>()
-        .len())
+        .count())
 }
 
 fn main() -> io::Result<()> {
