@@ -8,9 +8,9 @@ use nom::{
     sequence::pair,
     IResult,
 };
-use std::{fs, str::FromStr};
+use std::{cell::Cell, fs, str::FromStr};
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 enum Operation {
     ACC,
     JMP,
@@ -21,7 +21,7 @@ use Operation::*;
 
 #[derive(Clone, Debug)]
 struct Instruction {
-    operation: Operation,
+    operation: Cell<Operation>,
     argument: i128,
     use_count: usize,
 }
@@ -48,7 +48,7 @@ fn parse_instruction(input: &str) -> IResult<&str, Instruction> {
     Ok((
         input,
         Instruction {
-            operation,
+            operation: Cell::new(operation),
             argument,
             use_count: 0,
         },
@@ -68,7 +68,7 @@ fn run_program(instructions: &mut [Instruction]) -> Result<i128> {
         if instruction.use_count == 1 {
             return Err(anyhow!("loop detected"));
         }
-        match instruction.operation {
+        match instruction.operation.get() {
             ACC => {
                 acc += instruction.argument;
                 ip += 1;
@@ -86,20 +86,22 @@ fn run_program(instructions: &mut [Instruction]) -> Result<i128> {
 
 fn do_the_thing(input: &str) -> i128 {
     let (_, instructions) = separated_list1(line_ending, parse_instruction)(input).unwrap();
+
     instructions
         .iter()
         .rev()
-        .zip((0..instructions.len()).rev())
-        .find_map(|(instruction, index)| match instruction.operation {
+        .find_map(|instruction| match instruction.operation.get() {
             ACC => None,
             JMP | NOP => {
-                let mut instructions = instructions.clone();
-                if instructions[index].operation == JMP {
-                    instructions[index].operation = NOP;
+                let original = instruction.operation.get();
+                if original == JMP {
+                    instruction.operation.set(NOP);
                 } else {
-                    instructions[index].operation = JMP;
+                    instruction.operation.set(JMP);
                 }
-                run_program(&mut instructions).ok()
+                let mut clone = instructions.clone();
+                instruction.operation.set(original);
+                run_program(&mut clone).ok()
             }
         })
         .unwrap()
