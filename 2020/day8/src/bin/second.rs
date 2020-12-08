@@ -1,4 +1,3 @@
-use anyhow::{anyhow, Result};
 use nom::{
     branch::alt,
     bytes::complete::tag,
@@ -8,7 +7,7 @@ use nom::{
     sequence::pair,
     IResult,
 };
-use std::{cell::Cell, fs, str::FromStr};
+use std::{fs, io, str::FromStr};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum Operation {
@@ -21,7 +20,7 @@ use Operation::*;
 
 #[derive(Clone, Debug)]
 struct Instruction {
-    operation: Cell<Operation>,
+    operation: Operation,
     argument: i128,
     use_count: usize,
 }
@@ -48,66 +47,62 @@ fn parse_instruction(input: &str) -> IResult<&str, Instruction> {
     Ok((
         input,
         Instruction {
-            operation: Cell::new(operation),
+            operation,
             argument,
             use_count: 0,
         },
     ))
 }
 
-fn run_program(instructions: &mut [Instruction]) -> Result<i128> {
-    let mut ip: isize = 0;
+fn run_program(instructions: &mut [Instruction]) -> std::result::Result<i128, Vec<usize>> {
+    let mut ip: usize = 0;
+    let mut path = Vec::<usize>::new();
     let mut acc = 0;
     loop {
-        if ip == instructions.len() as isize {
-            return Ok(acc);
-        } else if ip > instructions.len() as isize {
-            return Err(anyhow!("instruction pointer out of bounds"));
-        }
-        let instruction = &mut instructions[ip as usize];
+        let instruction = &mut instructions[ip];
         if instruction.use_count == 1 {
-            return Err(anyhow!("loop detected"));
+            return Err(path);
         }
-        match instruction.operation.get() {
+        path.push(ip);
+        match instruction.operation {
             ACC => {
                 acc += instruction.argument;
                 ip += 1;
             }
             JMP => {
-                ip += instruction.argument as isize;
+                ip = (ip as i128 + instruction.argument) as usize;
             }
             NOP => {
                 ip += 1;
             }
         }
         instruction.use_count += 1;
+        if ip == instructions.len() {
+            return Ok(acc);
+        }
     }
 }
 
 fn do_the_thing(input: &str) -> i128 {
     let (_, instructions) = separated_list1(line_ending, parse_instruction)(input).unwrap();
-
-    instructions
-        .iter()
-        .rev()
-        .find_map(|instruction| match instruction.operation.get() {
-            ACC => None,
-            JMP | NOP => {
-                let original = instruction.operation.get();
-                if original == JMP {
-                    instruction.operation.set(NOP);
-                } else {
-                    instruction.operation.set(JMP);
-                }
-                let mut clone = instructions.clone();
-                instruction.operation.set(original);
-                run_program(&mut clone).ok()
+    let result = run_program(&mut (instructions.clone()));
+    if let Err(bad_instructions) = result {
+        println!("{}", bad_instructions.len());
+        bad_instructions.into_iter().rev().find_map(|bad_instruction| {
+            let mut instructions = instructions.clone();
+            match instructions[bad_instruction].operation {
+                NOP => instructions[bad_instruction].operation = JMP,
+                JMP => instructions[bad_instruction].operation = NOP,
+                ACC => (),
             }
-        })
-        .unwrap()
+            run_program(&mut instructions).ok()
+        }).unwrap()
+    } else {
+        result.unwrap()
+    }
 }
 
-fn main() -> Result<()> {
+fn main() -> io::Result<()> {
     let input = fs::read_to_string("input.txt")?;
     println!("{:?}", do_the_thing(&input));
 
