@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Result};
+use itertools::Itertools;
 use std::{collections::VecDeque, fs};
 
 fn find_abberation(input: &Vec<u64>, preamble_length: usize) -> u64 {
@@ -11,13 +12,11 @@ fn find_abberation(input: &Vec<u64>, preamble_length: usize) -> u64 {
                 ring.push_back(*n);
                 None
             } else {
-                for a in &ring {
-                    for b in &ring {
-                        if a + b == *n {
-                            ring.push_back(*n);
-                            ring.pop_front();
-                            return None;
-                        }
+                for (a, b) in ring.iter().tuple_combinations() {
+                    if a + b == *n {
+                        ring.push_back(*n);
+                        ring.pop_front();
+                        return None;
                     }
                 }
                 Some(*n)
@@ -27,15 +26,9 @@ fn find_abberation(input: &Vec<u64>, preamble_length: usize) -> u64 {
 }
 
 fn find_sequence(input: &Vec<u64>, abberation: u64) -> Result<u64> {
-    for length in 2..=(input.len()) {
-        // if input is 4 long:
-        //     4 will fit once
-        //     3 will fit twice
-        //     2 will fit 3 times
-        //     1 will fit 4 times
-        let possibilities = input.len() - length + 1;
-        for start in 0..possibilities {
-            let sequence = &input[start..(start + length)];
+    let input = &input[0..(input.iter().position(|&n| n == abberation).unwrap())];
+    for length in 2..(input.len()) {
+        for sequence in input.windows(length) {
             if sequence.iter().sum::<u64>() == abberation {
                 return Ok(sequence.iter().min().unwrap() + sequence.iter().max().unwrap());
             }

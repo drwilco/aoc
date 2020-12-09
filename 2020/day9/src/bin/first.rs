@@ -1,4 +1,5 @@
 use anyhow::Result;
+use itertools::Itertools;
 use std::{collections::VecDeque, fs};
 
 fn find_abberation(input: &str, preamble_length: usize) -> u32 {
@@ -12,13 +13,11 @@ fn find_abberation(input: &str, preamble_length: usize) -> u32 {
                 ring.push_back(n);
                 None
             } else {
-                for a in &ring {
-                    for b in &ring {
-                        if a + b == n {
-                            ring.push_back(n);
-                            ring.pop_front();
-                            return None;
-                        }
+                for (a, b) in ring.iter().tuple_combinations() {
+                    if a + b == n {
+                        ring.push_back(n);
+                        ring.pop_front();
+                        return None;
                     }
                 }
                 Some(n)
