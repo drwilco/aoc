@@ -1,6 +1,6 @@
 use anyhow::Result;
 use itertools::Itertools;
-use std::fs;
+use std::{fs, thread::sleep, time::Duration};
 
 #[derive(Debug, PartialEq)]
 struct SeatMap(Vec<Vec<char>>);
@@ -35,6 +35,12 @@ impl SeatMap {
             .into_iter()
             .filter(|(x_offset, y_offset)| self.occupied_in_direction(x, y, *x_offset, *y_offset))
             .count()
+    }
+
+    fn print(&self) {
+        for r in &self.0 {
+            println!("{}", r.iter().collect::<String>());
+        }
     }
 }
 
@@ -84,6 +90,9 @@ fn do_the_thing(input: &str) -> usize {
     while {
         let oldmap = map;
         map = apply_rules(&oldmap);
+        map.print();
+        println!();
+        sleep(Duration::from_millis(100));
         map != oldmap
     } {}
     map.0

@@ -1,5 +1,5 @@
 use anyhow::Result;
-use std::{cmp::min, fs};
+use std::{cmp::min, fs, thread::sleep, time::Duration};
 
 #[derive(Debug, PartialEq)]
 struct SeatMap(Vec<Vec<char>>);
@@ -15,6 +15,12 @@ impl SeatMap {
             .map(|r| r[min_x..=max_x].iter().filter(|&&s| s == '#').count())
             .sum::<usize>()
             - if self.0[y][x] == '#' { 1 } else { 0 }
+    }
+
+    fn print(&self) {
+        for r in &self.0 {
+            println!("{}", r.iter().collect::<String>());
+        }
     }
 }
 
@@ -64,6 +70,9 @@ fn do_the_thing(input: &str) -> usize {
     while {
         let oldmap = map;
         map = apply_rules(&oldmap);
+        map.print();
+        println!();
+        sleep(Duration::from_millis(100));
         map != oldmap
     } {}
     map.0
