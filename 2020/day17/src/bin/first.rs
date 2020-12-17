@@ -102,19 +102,16 @@ fn do_the_thing(input: &str, cycles: usize) -> Result<usize> {
             let from_inactive = space
                 .inactive_neighbors()
                 .into_iter()
-                .filter(|point| space.active_neighbor_count(point) == 3)
-                .collect::<HashSet<_>>();
-            let mut from_active = space
+                .filter(|point| space.active_neighbor_count(point) == 3);
+            let from_active = space
                 .0
                 .iter()
                 .filter(|point| {
                     let count = space.active_neighbor_count(point);
                     count == 2 || count == 3
                 })
-                .cloned()
-                .collect::<HashSet<_>>();
-            from_active.extend(from_inactive);
-            from_active
+                .cloned();
+            from_active.chain(from_inactive).collect()
         });
     }
     Ok(space.len())
