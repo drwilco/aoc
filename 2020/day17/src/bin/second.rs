@@ -137,7 +137,7 @@ mod tests {
 
     #[test_case(0 => 5)]
     #[test_case(6 => 848)]
-    fn first(cycles: usize) -> usize {
+    fn second(cycles: usize) -> usize {
         let input = ".#.
 ..#
 ###";
