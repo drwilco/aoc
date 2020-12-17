@@ -29,10 +29,10 @@ lazy_static! {
         let offsets: Vec<isize> = vec![-1, 0, 1];
         offsets
             .clone()
-            .into_iter()
-            .cartesian_product(offsets.clone().into_iter())
-            .cartesian_product(offsets.into_iter())
-            .filter_map(|((x, y), z)| {
+            .iter()
+            .cartesian_product(offsets.iter())
+            .cartesian_product(offsets.iter())
+            .filter_map(|((&x, &y), &z)| {
                 if x == 0 && y == 0 && z == 0 {
                     None
                 } else {

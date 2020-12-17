@@ -30,12 +30,11 @@ lazy_static! {
     static ref NEIGHBOR_OFFSETS: Vec<Point> = {
         let offsets: Vec<isize> = vec![-1, 0, 1];
         offsets
-            .clone()
-            .into_iter()
-            .cartesian_product(offsets.clone().into_iter())
-            .cartesian_product(offsets.clone().into_iter())
-            .cartesian_product(offsets.into_iter())
-            .filter_map(|(((x, y), z), w)| {
+            .iter()
+            .cartesian_product(offsets.iter())
+            .cartesian_product(offsets.iter())
+            .cartesian_product(offsets.iter())
+            .filter_map(|(((&x, &y), &z), &w)| {
                 if x == 0 && y == 0 && z == 0 && w == 0 {
                     None
                 } else {
