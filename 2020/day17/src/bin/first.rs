@@ -52,20 +52,17 @@ impl FromStr for Space {
                 .lines()
                 .enumerate()
                 .flat_map(|(y, line)| {
-                    line.chars()
-                        .enumerate()
-                        .filter_map(|(x, c)| {
-                            if c == '#' {
-                                Some(Point {
-                                    x: x as isize,
-                                    y: y as isize,
-                                    z: 0,
-                                })
-                            } else {
-                                None
-                            }
-                        })
-                        .collect::<Vec<_>>()
+                    line.chars().enumerate().filter_map(move |(x, c)| {
+                        if c == '#' {
+                            Some(Point {
+                                x: x as isize,
+                                y: y as isize,
+                                z: 0,
+                            })
+                        } else {
+                            None
+                        }
+                    })
                 })
                 .collect(),
         ))
