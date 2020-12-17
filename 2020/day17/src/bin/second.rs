@@ -5,7 +5,7 @@ use anyhow::{Error, Result};
 use itertools::Itertools;
 use std::{collections::HashSet, fs, ops::Add, str::FromStr};
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 struct Point {
     x: isize,
     y: isize,
