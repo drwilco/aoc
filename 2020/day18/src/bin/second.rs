@@ -3,11 +3,25 @@ use nom::{
     branch::alt,
     bytes::complete::tag,
     character::complete::{digit1, line_ending},
-    combinator::{map, value},
-    multi::{many1, separated_list1},
+    combinator::map,
+    multi::separated_list1,
     IResult,
 };
 use std::fs;
+
+// an expression is basically a multiplication of additions,
+// and an addition is a bunch of numbers or sub-expressions.
+// And since a sub-expression is basically an expression with
+// parentheses around them, and an expression is a multiplication.
+#[derive(Clone, Debug)]
+enum Component {
+    Number(usize),
+    Expression(Multiplication),
+}
+#[derive(Clone, Debug)]
+struct Multiplication(Vec<Addition>);
+#[derive(Clone, Debug)]
+struct Addition(Vec<Component>);
 
 fn parse_number(input: &str) -> IResult<&str, Component> {
     let (input, number) = map(digit1, |digit_str: &str| {
@@ -18,96 +32,45 @@ fn parse_number(input: &str) -> IResult<&str, Component> {
 
 fn parse_sub_expression(input: &str) -> IResult<&str, Component> {
     let (input, _) = tag("(")(input)?;
-    let (input, expression) = parse_expression(input)?;
+    let (input, expression) = parse_multiplication(input)?;
     let (input, _) = tag(")")(input)?;
     Ok((input, Component::Expression(expression)))
 }
 
-fn parse_expression(input: &str) -> IResult<&str, Expression> {
-    let (input, components) = many1(alt((
-        value(Component::Add, tag("+")),
-        value(Component::Multiply, tag("*")),
-        parse_number,
-        parse_sub_expression,
-    )))(input)?;
-    Ok((input, Expression { components }))
+fn parse_multiplication(input: &str) -> IResult<&str, Multiplication> {
+    let (input, additions) = separated_list1(tag("*"), parse_addition)(input)?;
+    Ok((input, Multiplication(additions)))
 }
 
-#[derive(Clone, Debug)]
-enum Component {
-    Add,
-    Multiply,
-    Number(usize),
-    Expression(Expression),
+fn parse_addition(input: &str) -> IResult<&str, Addition> {
+    let (input, components) =
+        separated_list1(tag("+"), alt((parse_number, parse_sub_expression)))(input)?;
+    Ok((input, Addition(components)))
 }
 
-#[derive(Clone, Debug)]
-struct Expression {
-    components: Vec<Component>,
-}
-
-impl Expression {
+impl Addition {
     fn result(self) -> usize {
-        // highest precedence
-        let components = self
-            .components
+        self.0
             .into_iter()
-            .map(|component| {
-                if let Component::Expression(expression) = component {
-                    Component::Number(expression.result())
-                } else {
-                    component
-                }
+            .map(|component| match component {
+                Component::Number(value) => value,
+                Component::Expression(multiplication) => multiplication.result(),
             })
-            .collect::<Vec<_>>();
-        // next precedence is addition
-        let components = components
+            .sum()
+    }
+}
+impl Multiplication {
+    fn result(self) -> usize {
+        self.0
             .into_iter()
-            .fold(Vec::new(), |mut acc, component| {
-                if acc.len() == 0 {
-                    acc.push(component);
-                    return acc;
-                }
-                match component {
-                    Component::Number(value) => {
-                        // if we're looking at a number we know it's not the first (if above) and we should
-                        // have at least another number and operator. If that's a multiply, just throw the
-                        // current value on the stack. But if it's an add, replace both with result of addition
-                        match acc.last().unwrap() {
-                            Component::Add => {
-                                let _ = acc.pop().unwrap();
-                                if let Component::Number(previous_value) = acc.pop().unwrap() {
-                                    acc.push(Component::Number(value + previous_value));
-                                } else {
-                                    panic!("components in unexpected order");
-                                }
-                            }
-                            Component::Multiply => acc.push(component),
-                            _ => unreachable!(),
-                        }
-                    }
-                    _ => acc.push(component),
-                }
-                acc
-            });
-        // now we should just have numbers and multiplies alternated
-        components
-            .into_iter()
-            .step_by(2)
-            .map(|component| {
-                if let Component::Number(value) = component {
-                    value
-                } else {
-                    unreachable!()
-                }
-            })
+            .map(|addition| addition.result())
             .product()
     }
 }
 
 fn do_the_thing(input: &str) -> usize {
     let input = &input.chars().filter(|c| *c != ' ').collect::<String>();
-    let (_, expressions) = separated_list1(line_ending, parse_expression)(input).unwrap();
+    let (_, expressions) = separated_list1(line_ending, parse_multiplication)(input).unwrap();
     expressions
         .into_iter()
         .map(|expression| expression.result())
