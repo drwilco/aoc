@@ -1,0 +1,16 @@
+[package]
+name = "template"
+version = "0.1.0"
+authors = ["Rogier 'DocWilco' Mulhuijzen <github@bsdchicks.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.35"
+nom = "6.0.1"
+test-case = "1.0.0"
+
+[build-dependencies]
+anyhow = "1.0.36"
+nom = "6.0.1"
