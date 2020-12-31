@@ -13,7 +13,7 @@ fn parse_map(input: &str) -> Result<TreeMap> {
     }).collect()
 }
 
-fn find_trees(input: &str, right: usize, down: usize) -> Result<usize> {
+fn find_trees(input: &str, right: usize, down: usize) -> usize {
     let tree_map = parse_map(input)?;
     Ok(tree_map.into_iter().enumerate().filter_map(|(y, row)| {
         if y % down == 0 {
@@ -29,7 +29,7 @@ fn find_trees(input: &str, right: usize, down: usize) -> Result<usize> {
 fn main() -> Result<()> {
     let input = fs::read_to_string("input.txt")?;
     let angles = vec![(1, 1), (3, 1), (5, 1), (7, 1), (1, 2)];
-    let result: usize = angles.into_iter().map(|(right, down)| find_trees(&input, right, down).unwrap()).product();
+    let result: usize = angles.into_iter().map(|(right, down)| find_trees(&input, right, down)).product();
     println!("{:?}", result);
     Ok(())
 }
