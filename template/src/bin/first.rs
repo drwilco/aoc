@@ -1,15 +1,11 @@
-use anyhow::{Result};
 use std::fs;
 
-fn do_the_thing(_input: &str) -> Result<()> {
-    Ok(())
+fn do_the_thing(input: &str) {
 }
 
-fn main() -> Result<()> {
-    let input = fs::read_to_string("input.txt")?;
+fn main() {
+    let input = fs::read_to_string("input.txt").unwrap();
     println!("{:?}", do_the_thing(&input));
-
-    Ok(())
 }
 
 #[cfg(test)]
@@ -18,7 +14,7 @@ mod tests {
     use test_case::test_case;
 
     #[test_case("Hello world!" => ())]
-    fn first(input: &str) {
-        do_the_thing(&input).unwrap()
+    fn test(input: &str) {
+        do_the_thing(&input)
     }
 }

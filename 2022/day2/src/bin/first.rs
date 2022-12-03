@@ -1,7 +1,6 @@
 #![allow(clippy::identity_op)]
 
 use std::fs;
-use std::io::Result;
 
 fn do_the_thing(input: &str) -> u64 {
     input
@@ -31,11 +30,9 @@ fn do_the_thing(input: &str) -> u64 {
         .sum()
 }
 
-fn main() -> Result<()> {
-    let input = fs::read_to_string("input.txt")?;
+fn main() {
+    let input = fs::read_to_string("input.txt").unwrap();
     println!("{:?}", do_the_thing(&input));
-
-    Ok(())
 }
 
 #[cfg(test)]
