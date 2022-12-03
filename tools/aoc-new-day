@@ -1,0 +1,18 @@
+#!/bin/bash
+
+DAY=${1:-`date +%d`}
+DAY=${DAY#0}
+
+YEAR=`date +%Y`
+
+if [ ! -d ~/dev/aoc/$YEAR/day$DAY ]; then
+  cd ~/dev/aoc/$YEAR/
+  cp -R ~/dev/aoc/template/ ~/dev/aoc/$YEAR/day$DAY
+  cd day$DAY
+  sed -i "s/template/day$DAY/" Cargo.toml
+  rm -f Cargo.lock # just in case
+  curl -so input.txt -H "cookie: session=***REMOVED***" https://adventofcode.com/$YEAR/day/$DAY/input
+  echo $PWD
+else
+  echo ~/dev/aoc/$YEAR/day$DAY
+fi
