@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DAY=${1:-`date +%d`}
+DAY=${1:-`TZ=EST date +%d`}
 DAY=${DAY#0}
 
 YEAR=`date +%Y`
