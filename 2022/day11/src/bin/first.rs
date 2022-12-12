@@ -3,7 +3,7 @@ use std::fs;
 use nom::{
     branch::alt,
     bytes::complete::tag,
-    character::complete::{digit1, line_ending},
+    character::complete::{char, digit1, line_ending},
     combinator::{map, map_res},
     multi::separated_list1,
     sequence::{preceded, terminated},
@@ -44,8 +44,8 @@ fn parse_operation(input: &str) -> IResult<&str, Operation> {
     let (input, operation) = terminated(
         alt((
             map(preceded(tag("+ "), parse_usize), Operation::Add),
-            map(preceded(tag("* "), parse_usize), Operation::Multiply),
             map(tag("* old"), |_| Operation::MultiplyBySelf),
+            map(preceded(tag("* "), parse_usize), Operation::Multiply),
         )),
         line_ending,
     )(input)?;
@@ -72,7 +72,7 @@ fn parse_true_false(input: &str) -> IResult<&str, (usize, usize)> {
 fn parse_monkey(input: &str) -> IResult<&str, Monkey> {
     let (input, _) = tag("Monkey ")(input)?;
     let (input, _) = parse_usize(input)?;
-    let (input, _) = tag(":")(input)?;
+    let (input, _) = char(':')(input)?;
     let (input, _) = line_ending(input)?;
     let (input, items) = parse_items(input)?;
     let (input, operation) = parse_operation(input)?;
