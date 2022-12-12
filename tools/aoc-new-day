@@ -1,18 +1,20 @@
 #!/bin/bash
 
+# Change to your Advent of Code root directory
+DIR=~/aoc
+
 DAY=${1:-`TZ=EST date +%d`}
 DAY=${DAY#0}
-
 YEAR=`date +%Y`
 
-if [ ! -d ~/dev/aoc/$YEAR/day$DAY ]; then
-  cd ~/dev/aoc/$YEAR/
-  cp -R ~/dev/aoc/template/ ~/dev/aoc/$YEAR/day$DAY
+if [ ! -d $DIR/$YEAR/day$DAY ]; then
+  cd $DIR/$YEAR/
+  cp -R $DIR/template/ $DIR/$YEAR/day$DAY
   cd day$DAY
   sed -i "s/template/day$DAY/" Cargo.toml
   rm -f Cargo.lock # just in case
   curl -so input.txt -H "cookie: session=`cat ~/.aoc_session`" https://adventofcode.com/$YEAR/day/$DAY/input
   echo $PWD
 else
-  echo ~/dev/aoc/$YEAR/day$DAY
+  echo $DIR/$YEAR/day$DAY
 fi
