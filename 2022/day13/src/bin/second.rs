@@ -21,15 +21,13 @@ struct List(Vec<Value>);
 impl Ord for List {
     fn cmp(&self, other: &Self) -> Ordering {
         let mut iter = self.0.iter().zip(other.0.iter());
-        loop {
-            match iter.next() {
-                Some((a, b)) => match a.cmp(b) {
-                    Ordering::Equal => continue,
-                    other => return other,
-                },
-                None => return self.0.len().cmp(&other.0.len()),
-            }
+        while let Some((a, b)) = iter.next() {
+            match a.cmp(b) {
+                Ordering::Equal => continue,
+                other => return other,
+            };
         }
+        self.0.len().cmp(&other.0.len())
     }
 }
 
