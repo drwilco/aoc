@@ -63,9 +63,6 @@ fn do_the_thing(input: &str) -> usize {
     // max Y. Min Y is interesting for the first time doing the source column,
     // but maybe that's overkill for now. We don't need min/max X, as we're
     // using the HashSet approach, and don't need to know how wide things are.
-    //
-    // Accessing the outer fold's variables directly from the inner fold is a
-    // bit dirty, but fine for now.
     let (mut environment, max_y) = lines.into_iter().fold(
         (HashSet::<Point>::new(), None::<i32>),
         |(mut environment, max_y), line| {

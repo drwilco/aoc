@@ -1,4 +1,7 @@
-use std::{collections::HashSet, fs};
+use std::{
+    collections::{HashMap, HashSet},
+    fs,
+};
 
 use nom::{
     bytes::complete::tag,
@@ -34,7 +37,16 @@ use nom::{
 // So, #2 it is. But I think we'll keep a separate HashMap of Point -> last
 // impact Point for optimization purposes. We'll have at least one for the
 // source column, and then add more for drops from edges. Or at least something
-// like that.
+// like that. Actually, instead of impacts, just track all succeeded drop steps,
+// because each packet of sand will follow the previous path, except for when it
+// gets blocked by the previous packet of sand. Since the only thing that has
+// changed in the entire environment is the last sand that came to rest. So once
+// resting, just lookup what previous was for that and start there. We need to
+// start tracking from the source because we will eventually backtrack to there.
+//
+// Maybe we even optimize in the source column, because that will always be up
+// (if we don't have a "dropped from" location in the map, because we started at
+// the highest rock in the source column) but it's probably not worth it.
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 struct Point {
@@ -63,9 +75,6 @@ fn do_the_thing(input: &str) -> usize {
     // max Y. Min Y is interesting for the first time doing the source column,
     // but maybe that's overkill for now. We don't need min/max X, as we're
     // using the HashSet approach, and don't need to know how wide things are.
-    //
-    // Accessing the outer fold's variables directly from the inner fold is a
-    // bit dirty, but fine for now.
     let (mut environment, max_y) = lines.into_iter().fold(
         (HashSet::<Point>::new(), None::<i32>),
         |(mut environment, max_y), line| {
@@ -109,9 +118,17 @@ fn do_the_thing(input: &str) -> usize {
 
     // loop until sand blocks the source, then return out
     let mut resting_sand: usize = 0;
+    // Source is a 500,0
+    let source = Point { x: 500, y: 0 };
+    // The last place we land will always be the one to block the next sand to
+    // fall, so don't start at the source, but at the location the last sand
+    // landed from. Start at the source for the first iteration.
+    //
+    // So for each point we visit, track the last point we visited in a HashMap.
+    let mut drop_from = HashMap::<Point, Point>::new();
+    let mut next_start = source;
     loop {
-        // Source is a 500,0
-        let mut sand = Point { x: 500, y: 0 };
+        let mut current = next_start;
         loop {
             // Whether or not we've dropped down at all in this
             // iteration of the inner loop
@@ -120,12 +137,14 @@ fn do_the_thing(input: &str) -> usize {
             // try straight down first, then left-down, then right-down
             for dx in [0, -1, 1] {
                 let next = Point {
-                    x: sand.x + dx,
-                    y: sand.y + 1,
+                    x: current.x + dx,
+                    y: current.y + 1,
                 };
                 // if we can drop down to said position, do so
                 if !environment.contains(&next) {
-                    sand = next;
+                    // track where we dropped from
+                    drop_from.insert(next, current);
+                    current = next;
                     dropped = true;
                     break;
                 }
@@ -135,13 +154,15 @@ fn do_the_thing(input: &str) -> usize {
             // There is now an infinite width barrier at max_y + 2, so we
             // can shortcut the loop here if we're at max_y + 1. We check
             // that here so we don't do it 3 times up above.
-            if !dropped || sand.y == max_y + 1 {
-                environment.insert(sand);
+            if !dropped || current.y == max_y + 1 {
+                environment.insert(current);
                 resting_sand += 1;
                 // if we're resting at the source, we're done
-                if sand == (Point { x: 500, y: 0 }) {
+                if current == source {
                     return resting_sand;
                 }
+                // find the last place we dropped from, and start there
+                next_start = drop_from[&current];
                 break;
             }
         }
