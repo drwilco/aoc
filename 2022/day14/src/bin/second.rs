@@ -1,7 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-    fs,
-};
+use std::{collections::HashSet, fs};
 
 use nom::{
     bytes::complete::tag,
@@ -47,6 +44,9 @@ use nom::{
 // Maybe we even optimize in the source column, because that will always be up
 // (if we don't have a "dropped from" location in the map, because we started at
 // the highest rock in the source column) but it's probably not worth it.
+//
+// Better than a HashMap for backtracking is a Vec. Since we will only ever need
+// to go one back.
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 struct Point {
@@ -125,7 +125,7 @@ fn do_the_thing(input: &str) -> usize {
     // landed from. Start at the source for the first iteration.
     //
     // So for each point we visit, track the last point we visited in a HashMap.
-    let mut drop_from = HashMap::<Point, Point>::new();
+    let mut drop_from = Vec::<Point>::new();
     let mut next_start = source;
     loop {
         let mut current = next_start;
@@ -143,7 +143,7 @@ fn do_the_thing(input: &str) -> usize {
                 // if we can drop down to said position, do so
                 if !environment.contains(&next) {
                     // track where we dropped from
-                    drop_from.insert(next, current);
+                    drop_from.push(current);
                     current = next;
                     dropped = true;
                     break;
@@ -162,7 +162,7 @@ fn do_the_thing(input: &str) -> usize {
                     return resting_sand;
                 }
                 // find the last place we dropped from, and start there
-                next_start = drop_from[&current];
+                next_start = drop_from.pop().unwrap();
                 break;
             }
         }
