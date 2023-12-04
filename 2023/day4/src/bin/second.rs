@@ -33,7 +33,7 @@ fn parse_numbers(input: &str) -> IResult<&str, Vec<usize>> {
     separated_list1(space1, parse_number)(input)
 }
 
-fn parse_game(input: &str) -> IResult<&str, Card> {
+fn parse_card(input: &str) -> IResult<&str, Card> {
     let (input, _) = tag("Card")(input)?;
     let (input, _) = space1(input)?;
     let (input, _) = digit1(input)?;
@@ -54,7 +54,7 @@ fn parse_game(input: &str) -> IResult<&str, Card> {
 }
 
 fn do_the_thing(input: &str) -> usize {
-    let (input, mut cards) = many1(parse_game)(input).unwrap();
+    let (input, mut cards) = many1(parse_card)(input).unwrap();
     assert!(input.is_empty());
     let mut working_set = &mut cards[..];
     while let Some((current, remaining)) = working_set.split_first_mut() {
