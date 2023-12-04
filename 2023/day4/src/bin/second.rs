@@ -10,13 +10,13 @@ use nom::{
 use std::{collections::HashSet, fs};
 
 #[derive(Debug)]
-struct Game {
+struct Card {
     winning_numbers: Vec<usize>,
     numbers: Vec<usize>,
     amount: usize,
 }
 
-impl Game {
+impl Card {
     fn score(&self) -> usize {
         let winning_numbers: HashSet<usize> =
             HashSet::from_iter(self.winning_numbers.iter().cloned());
@@ -33,7 +33,7 @@ fn parse_numbers(input: &str) -> IResult<&str, Vec<usize>> {
     separated_list1(space1, parse_number)(input)
 }
 
-fn parse_game(input: &str) -> IResult<&str, Game> {
+fn parse_game(input: &str) -> IResult<&str, Card> {
     let (input, _) = tag("Card")(input)?;
     let (input, _) = space1(input)?;
     let (input, _) = digit1(input)?;
@@ -45,7 +45,7 @@ fn parse_game(input: &str) -> IResult<&str, Game> {
     let (input, _) = line_ending(input)?;
     Ok((
         input,
-        Game {
+        Card {
             winning_numbers,
             numbers,
             amount: 1,
@@ -54,16 +54,18 @@ fn parse_game(input: &str) -> IResult<&str, Game> {
 }
 
 fn do_the_thing(input: &str) -> usize {
-    let (input, mut games) = many1(parse_game)(input).unwrap();
+    let (input, mut cards) = many1(parse_game)(input).unwrap();
     assert!(input.is_empty());
-    for i in 0..games.len() {
-        let score = games[i].score();
-        let amount = games[i].amount;
-        for j in 0..score {
-            games[i+j+1].amount += amount;
-        }
+    let mut working_set = &mut cards[..];
+    while let Some((current, remaining)) = working_set.split_first_mut() {
+        let score = current.score();
+        remaining
+            .iter_mut()
+            .take(score)
+            .for_each(|c| c.amount += current.amount);
+        working_set = remaining;
     }
-    games.into_iter().map(|g| g.amount).sum()
+    cards.into_iter().map(|g| g.amount).sum()
 }
 
 fn main() {
