@@ -10,6 +10,8 @@ use nom::{
     IResult,
 };
 
+use itertools::Itertools;
+
 fn parse_i64(input: &str) -> IResult<&str, i64> {
     map(digit1, |s: &str| s.parse::<i64>().unwrap())(input)
 }
@@ -112,7 +114,7 @@ fn parse_map(input: &str) -> IResult<&str, CategoryMap> {
     let (input, _) = newline(input)?;
     let (input, mut maps) = many1(parse_range_map)(input)?;
     // Sort them so the search in map() works
-    maps[..].sort_unstable_by_key(|m| m.range.start);
+    maps.sort_unstable_by_key(|m| m.range.start);
     Ok((
         input,
         CategoryMap {
@@ -137,6 +139,18 @@ fn do_the_thing(input: &str) -> i64 {
         id_ranges = id_ranges
             .into_iter()
             .flat_map(|range| map.map(range))
+            .collect();
+        // Merge adjoining ranges for a minor speedup
+        id_ranges.sort_unstable_by_key(|r| r.start);
+        id_ranges = id_ranges
+            .into_iter()
+            .coalesce(|a, b| {
+                if a.end == b.start {
+                    Ok(a.start..b.end)
+                } else {
+                    Err((a, b))
+                }
+            })
             .collect();
         category = &map.to;
     }
