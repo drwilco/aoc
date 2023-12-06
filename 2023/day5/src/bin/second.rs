@@ -125,7 +125,7 @@ fn parse_map(input: &str) -> IResult<&str, CategoryMap> {
     ))
 }
 
-fn do_the_thing(input: &str) -> i64 {
+pub fn run(input: &str) -> i64 {
     let (input, seeds) = parse_seeds(input).unwrap();
     let (input, _) = newline::<&str, Error<&str>>(input).unwrap();
     let (input, maps) = separated_list1(newline, parse_map)(input).unwrap();
@@ -163,7 +163,7 @@ fn do_the_thing(input: &str) -> i64 {
 
 fn main() {
     let input = fs::read_to_string("input.txt").unwrap();
-    println!("{:?}", do_the_thing(&input));
+    println!("{:?}", run(&input));
 }
 
 #[cfg(test)]
@@ -206,6 +206,6 @@ humidity-to-location map:
 56 93 4
 " => 46)]
     fn test(input: &str) -> i64 {
-        do_the_thing(&input)
+        run(&input)
     }
 }
