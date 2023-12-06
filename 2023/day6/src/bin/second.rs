@@ -7,6 +7,8 @@ use nom::{
     IResult,
 };
 
+use rayon::prelude::*;
+
 fn parse_line(start_tag: &str) -> impl Fn(&str) -> IResult<&str, i64> + '_ {
     move |input: &str| {
         let (input, _) = tag(start_tag)(input)?;
@@ -25,8 +27,8 @@ struct Race {
 }
 
 impl Race {
-    fn solutions(&self) -> impl Iterator<Item=i64> + '_ {
-        (0..self.time)
+    fn solutions(&self) -> impl ParallelIterator<Item=i64> + '_ {
+        (0..self.time).into_par_iter()
            .filter(|speed| {
             let remaining_time = self.time - speed;
             let distance = speed * remaining_time;

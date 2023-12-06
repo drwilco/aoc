@@ -39,7 +39,7 @@ impl Race {
     }
 }
 
-fn do_the_thing(input: &str) -> i64 {
+pub fn run(input: &str) -> i64 {
     let (input, times) = parse_line("Time:")(input).unwrap();
     let (input, distances) = parse_line("Distance:")(input).unwrap();
     assert!(input.is_empty());
@@ -57,7 +57,7 @@ fn do_the_thing(input: &str) -> i64 {
 
 fn main() {
     let input = fs::read_to_string("input.txt").unwrap();
-    println!("{:?}", do_the_thing(&input));
+    println!("{:?}", run(&input));
 }
 
 #[cfg(test)]
@@ -69,6 +69,6 @@ mod tests {
 Distance:  9  40  200
 " => 288)]
     fn test(input: &str) -> i64 {
-        do_the_thing(&input)
+        run(&input)
     }
 }
