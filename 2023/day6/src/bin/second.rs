@@ -14,7 +14,11 @@ fn parse_line(start_tag: &str) -> impl Fn(&str) -> IResult<&str, i64> + '_ {
         let (input, _) = tag(start_tag)(input)?;
         let (input, _) = space1(input)?;
         let (input, numbers) = separated_list1(space1, digit1)(input)?;
-        let number = numbers.into_iter().collect::<String>().parse::<i64>().unwrap();
+        let number = numbers
+            .into_iter()
+            .collect::<String>()
+            .parse::<i64>()
+            .unwrap();
         let (input, _) = line_ending(input)?;
         Ok((input, number))
     }
@@ -27,13 +31,18 @@ struct Race {
 }
 
 impl Race {
-    fn solutions(&self) -> impl ParallelIterator<Item=i64> + '_ {
-        (0..self.time).into_par_iter()
-           .filter(|speed| {
+    fn solutions(&self) -> i64 {
+        let first = (0..self.time).into_par_iter().find_first(|speed| {
             let remaining_time = self.time - speed;
             let distance = speed * remaining_time;
             distance > self.distance
-        })
+        }).unwrap();
+        let last = (first..self.time).into_par_iter().find_last(|speed| {
+            let remaining_time = self.time - speed;
+            let distance = speed * remaining_time;
+            distance > self.distance
+        }).unwrap();
+        last - first + 1
     }
 }
 
@@ -41,7 +50,7 @@ pub fn run(input: &str) -> i64 {
     let (input, time) = parse_line("Time:")(input).unwrap();
     let (input, distance) = parse_line("Distance:")(input).unwrap();
     assert!(input.is_empty());
-    Race { time, distance }.solutions().count() as i64
+    Race { time, distance }.solutions()
 }
 
 fn main() {

@@ -1,11 +1,12 @@
 use std::fs;
 
-fn do_the_thing(input: &str) {
+pub fn run(input: &str) -> i64 {
+    0
 }
 
 fn main() {
     let input = fs::read_to_string("input.txt").unwrap();
-    println!("{:?}", do_the_thing(&input));
+    println!("{:?}", run(&input));
 }
 
 #[cfg(test)]
@@ -13,8 +14,8 @@ mod tests {
     use super::*;
     use test_case::test_case;
 
-    #[test_case("Hello world!" => ())]
-    fn test(input: &str) {
-        do_the_thing(&input)
+    #[test_case("Hello world!" => 0)]
+    fn test(input: &str) -> i64 {
+        run(&input)
     }
 }
