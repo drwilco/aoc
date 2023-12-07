@@ -199,20 +199,12 @@ fn parse_hands(input: &str) -> Vec<Hand> {
 }
 
 pub fn run(input: &str) -> i64 {
-    let start = std::time::Instant::now();
     let mut hands = parse_hands(input);
-    println!("Parsed hands in {:?}", start.elapsed());
-
-    let start = std::time::Instant::now();
     hands.sort_unstable();
-    println!("Sorted hands in {:?}", start.elapsed());
-
-    let start = std::time::Instant::now();
     let result = hands
         .into_iter()
         .enumerate()
         .fold(0, |acc, (i, hand)| acc + hand.bid * (i as i64 + 1));
-    println!("Calculated result in {:?}", start.elapsed());
     result
 }
 
