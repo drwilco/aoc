@@ -93,13 +93,8 @@ struct Hand {
 
 impl From<&Cards> for HandType {
     fn from(cards: &Cards) -> Self {
-        let jokers = (cards.0[0] == 0) as u8
-            + (cards.0[1] == 0) as u8
-            + (cards.0[2] == 0) as u8
-            + (cards.0[3] == 0) as u8
-            + (cards.0[4] == 0) as u8;
-        let combined = cards.0[0] | cards.0[1] | cards.0[2] | cards.0[3] | cards.0[4];
-        match combined.count_ones() {
+        let jokers = cards.0.iter().filter(|&&card| card == 0).count() as u8;
+        match cards.0.iter().fold(0, |acc, &card| acc | card).count_ones() {
             5 => Self::HighCard, // No jokers
             4 => Self::OnePair,  // 0 or 1 jokers: XYZAA or XYZAJ
             3 => {
@@ -199,13 +194,13 @@ fn parse_hands(input: &str) -> Vec<Hand> {
 }
 
 pub fn run(input: &str) -> i64 {
-    let mut hands = parse_hands(input);
-    hands.sort_unstable();
-    let result = hands
+        let mut hands = parse_hands(input);
+        hands.sort_unstable();
+        let result = hands
         .into_iter()
         .enumerate()
         .fold(0, |acc, (i, hand)| acc + hand.bid * (i as i64 + 1));
-    result
+        result
 }
 
 fn main() {
