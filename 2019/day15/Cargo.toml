@@ -1,5 +1,5 @@
 [package]
-name = "day15"
+name = "aoc2019day15"
 version = "0.1.0"
 authors = ["Rogier 'DocWilco' Mulhuijzen <github@bsdchicks.com>"]
 edition = "2018"
