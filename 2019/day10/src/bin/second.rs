@@ -43,7 +43,7 @@ struct MapMeta {
   map: Map,
 }
 
-fn display_view(view: &Map, width: isize, height: isize) {
+fn _display_view(view: &Map, width: isize, height: isize) {
   for y in 0..height {
     for x in 0..width {
       match view.get(&Point{x, y}) {

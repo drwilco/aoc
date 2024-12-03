@@ -74,7 +74,6 @@ fn run_program(mut program: Vec<isize>, mut input: Vec<isize>) -> isize {
         // write to output
         let inval = param_to_value(&program, ip + 1, param_1_mode);
         return inval;
-        ip += 2;
       }
       5 | 6 => {
         // in in

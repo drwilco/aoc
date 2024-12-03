@@ -42,18 +42,6 @@ struct Point {
   y: isize,
 }
 
-#[derive(Debug)]
-enum Direction {
-  Up,
-  Right,
-  Down,
-  Left,
-}
-
-impl Default for Direction {
-  fn default() -> Self { Direction::Up }
-}
-
 trait PipelinePart {
   fn push_input(&mut self, input: isize);
   fn pop_output(&mut self) -> isize;

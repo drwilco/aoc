@@ -1,13 +1,8 @@
-use std::char;
-use std::collections::HashMap;
 use std::collections::VecDeque;
 use std::fmt;
 use std::fs;
 use std::io;
 use std::ops;
-use std::process;
-use std::thread;
-use std::time::Duration;
 
 #[derive(Debug, PartialEq)]
 enum ParamMode {
@@ -29,12 +24,6 @@ impl Default for PartState {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
-enum Turn {
-    Left,
-    Right,
-}
-
 #[derive(Copy, Clone, Debug, PartialEq)]
 enum Direction {
     North = 1,
@@ -46,46 +35,6 @@ enum Direction {
 impl Default for Direction {
     fn default() -> Self {
         Direction::North
-    }
-}
-
-impl ops::AddAssign<Turn> for Direction {
-    fn add_assign(&mut self, rhs: Turn) {
-        *self = match rhs {
-            Turn::Left => match self {
-                Direction::North => Direction::West,
-                Direction::South => Direction::East,
-                Direction::West => Direction::South,
-                Direction::East => Direction::North,
-            },
-            Turn::Right => match self {
-                Direction::North => Direction::East,
-                Direction::South => Direction::West,
-                Direction::West => Direction::North,
-                Direction::East => Direction::South,
-            },
-        };
-    }
-}
-
-impl ops::Add<Turn> for Direction {
-    type Output = Direction;
-
-    fn add(self, rhs: Turn) -> Direction {
-        match rhs {
-            Turn::Left => match self {
-                Direction::North => Direction::West,
-                Direction::South => Direction::East,
-                Direction::West => Direction::South,
-                Direction::East => Direction::North,
-            },
-            Turn::Right => match self {
-                Direction::North => Direction::East,
-                Direction::South => Direction::West,
-                Direction::West => Direction::North,
-                Direction::East => Direction::South,
-            },
-        }
     }
 }
 
@@ -163,13 +112,8 @@ impl ops::AddAssign<Direction> for Point {
 trait PipelinePart {
     fn get_input_queue(&self) -> VecDeque<isize>;
     fn get_output_queue(&self) -> VecDeque<isize>;
-    fn push_input(&mut self, input: isize);
-    fn pop_output(&mut self) -> isize;
-    fn output_available(&self) -> bool;
     fn get_state(&self) -> PartState;
-    fn get_previous(&self) -> Option<usize>;
     fn run(&mut self);
-    fn broken_pipe(&mut self);
 }
 
 impl fmt::Debug for dyn PipelinePart {
@@ -189,7 +133,6 @@ struct IntCode {
     input_queue: VecDeque<isize>,
     output_queue: VecDeque<isize>,
     state: PartState,
-    previous: Option<usize>,
     program: Vec<isize>,
     ip: usize,
     rel_base: isize,
@@ -202,47 +145,11 @@ impl PipelinePart for IntCode {
     fn get_output_queue(&self) -> VecDeque<isize> {
         self.output_queue.clone()
     }
-    fn push_input(&mut self, input: isize) {
-        self.input_queue.push_back(input);
-    }
-    fn pop_output(&mut self) -> isize {
-        self.output_queue.pop_front().unwrap()
-    }
-    fn output_available(&self) -> bool {
-        !self.output_queue.is_empty()
-    }
     fn get_state(&self) -> PartState {
         self.state
     }
-    fn get_previous(&self) -> Option<usize> {
-        self.previous
-    }
     fn run(&mut self) {
         self.state = run_program(self);
-    }
-    fn broken_pipe(&mut self) {
-        panic!("IntCode expects input, but provider exited");
-    }
-}
-
-#[derive(Debug, PartialEq, Clone)]
-enum TileType {
-    Scaffold,
-    Open,
-    Intersection,
-}
-
-type TileMap = HashMap<Point, TileType>;
-
-#[derive(Debug, PartialEq)]
-enum DroneState {
-    Init,
-    GetResult,
-}
-
-impl Default for DroneState {
-    fn default() -> Self {
-        DroneState::Init
     }
 }
 
@@ -403,57 +310,6 @@ fn run_program(intcode: &mut IntCode) -> PartState {
     PartState::Exit
 }
 
-fn run_pipe(pipeline: &mut Vec<Box<dyn PipelinePart>>) -> io::Result<()> {
-    let mut exited = 0;
-    while exited < pipeline.len() {
-        exited = 0;
-        for index in 0..pipeline.len() {
-            loop {
-                match pipeline[index].get_state() {
-                    PartState::Exit => {
-                        exited += 1;
-                        break; // go to the next part
-                    }
-                    PartState::Run => {
-                        pipeline[index].run();
-                        if pipeline[index].output_available() {
-                            break;
-                        }
-                    }
-                    PartState::NeedInput => {
-                        match pipeline[index].get_previous() {
-                            None => {
-                                println!("please provide input: ");
-                                let mut buf = String::new();
-                                io::stdin().read_line(&mut buf).expect("input error");
-                                let temp = match buf.trim().parse() {
-                                    Ok(x) => x,
-                                    Err(_) => break,
-                                };
-                                pipeline[index].push_input(temp);
-                                pipeline[index].run();
-                            }
-                            Some(previdx) => {
-                                if pipeline[previdx].output_available() {
-                                    let temp = pipeline[previdx].pop_output();
-                                    pipeline[index].push_input(temp);
-                                    pipeline[index].run();
-                                } else {
-                                    match pipeline[previdx].get_state() {
-                                        PartState::Exit => pipeline[index].broken_pipe(),
-                                        _ => break, // go to the next part
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    Ok(())
-}
-
 fn main() -> io::Result<()> {
     let program = fs::read_to_string("input.txt")?
         .trim()
@@ -515,28 +371,6 @@ mod tests {
         assert_eq!(program, output);
     }
 
-    #[test]
-    fn day9_test_2() {
-        let program = vec![1102, 34915192, 34915192, 7, 4, 7, 99, 0];
-        let mut intcode = IntCode {
-            program: program.to_vec(),
-            ..Default::default()
-        };
-        intcode.run();
-        assert_eq!(format!("{}", intcode.pop_output()).len(), 16);
-    }
-
-    #[test]
-    fn day9_test_3() {
-        let program = vec![104, 1125899906842624, 99];
-        let mut intcode = IntCode {
-            program: program.to_vec(),
-            ..Default::default()
-        };
-        intcode.run();
-        assert_eq!(intcode.pop_output(), 1125899906842624);
-    }
-
     #[test_case( vec![1,9,10,3,2,3,11,0,99,30,40,50] => vec![3500,9,10,70,2,3,11,0,99,30,40,50] ; "day 2 example 1")]
     #[test_case( vec![1,0,0,0,99] => vec![2,0,0,0,99] ; "day 2 example 2")]
     #[test_case( vec![2,3,0,3,99] => vec![2,3,0,6,99] ; "day 2 example 3")]
@@ -551,85 +385,5 @@ mod tests {
         };
         intcode.run();
         intcode.program.to_vec()
-    }
-
-    #[test_case( vec![3,9,8,9,10,9,4,9,99,-1,8], 8 => 1 ; "day 5 example 3a - equal to position mode")]
-    #[test_case( vec![3,9,8,9,10,9,4,9,99,-1,8], 234 => 0 ; "day 5 example 3b - equal to position mode")]
-    #[test_case( vec![3,9,7,9,10,9,4,9,99,-1,8], 7 => 1 ; "day 5 example 4a - less than position mode")]
-    #[test_case( vec![3,9,7,9,10,9,4,9,99,-1,8], 8 => 0 ; "day 5 example 4b - less than position mode")]
-    #[test_case( vec![3,9,7,9,10,9,4,9,99,-1,8], 9 => 0 ; "day 5 example 4c - less than position mode")]
-    #[test_case( vec![3,9,7,9,10,9,4,9,99,-1,8], -9 => 1 ; "day 5 example 4d - less than position mode")]
-    #[test_case( vec![3,3,1108,-1,8,3,4,3,99], 8 => 1 ; "day 5 example 5a - equal to immediate mode")]
-    #[test_case( vec![3,3,1108,-1,8,3,4,3,99], 234 => 0 ; "day 5 example 5b - equal to immediate mode")]
-    #[test_case( vec![3,3,1107,-1,8,3,4,3,99], 7 => 1 ; "day 5 example 6a - less than immediate mode")]
-    #[test_case( vec![3,3,1107,-1,8,3,4,3,99], 8 => 0 ; "day 5 example 6b - less than immediate mode")]
-    #[test_case( vec![3,3,1107,-1,8,3,4,3,99], 9 => 0 ; "day 5 example 6c - less than immediate mode")]
-    #[test_case( vec![3,3,1107,-1,8,3,4,3,99], -9 => 1 ; "day 5 example 6d - less than immediate mode")]
-    #[test_case( vec![3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9], 0 => 0 ; "day 5 example 7a - jump position mode")]
-    #[test_case( vec![3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9], 1 => 1 ; "day 5 example 7b - jump position mode")]
-    #[test_case( vec![3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9], -99 => 1 ; "day 5 example 7c - jump position mode")]
-    #[test_case( vec![3,3,1105,-1,9,1101,0,0,12,4,12,99,1], 0 => 0 ; "day 5 example 8a - jump immediate mode")]
-    #[test_case( vec![3,3,1105,-1,9,1101,0,0,12,4,12,99,1], 1 => 1 ; "day 5 example 8b - jump immediate mode")]
-    #[test_case( vec![3,3,1105,-1,9,1101,0,0,12,4,12,99,1], -99 => 1 ; "day 5 example 8c - jump immediate mode")]
-    #[test_case( vec![3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104
-    ,999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99], -99 => 999 ; "day 5 example 9a - long example")]
-    #[test_case( vec![3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104
-    ,999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99], 8 => 1000 ; "day 5 example 9b - long example")]
-    #[test_case( vec![3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104
-    ,999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99], 1337 => 1001 ; "day 5 example 9c - long example")]
-
-    fn simple_input_output(program: Vec<isize>, input: isize) -> isize {
-        let mut pipeline: Vec<Box<dyn PipelinePart>> = vec![Box::new(IntCode {
-            program: program.to_vec(),
-            input_queue: VecDeque::from(vec![input]),
-            ..Default::default()
-        })];
-        run_pipe(&mut pipeline).expect("something went wrong");
-        pipeline[0].pop_output()
-    }
-
-    #[test_case( vec![3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0], vec![4,3,2,1,0], 0 => 43210 ; "day 7 example 1")]
-    #[test_case( vec![3,23,3,24,1002,24,10,24,1002,23,-1,23,101,5,23,23,1,24,23,23,4,23,99,0,0], vec![0,1,2,3,4],
-    0 => 54321 ; "day 7 example 2")]
-    #[test_case( vec![3,31,3,32,1002,32,10,32,1001,31,-2,31,1007,31,0,33,1002,33,7,33,1,33,31,31,1,32,31,31,4,31,99,0,0,0],
-    vec![1,0,4,3,2], 0 => 65210 ; "day 7 example 3")]
-    fn amp_chain(program: Vec<isize>, settings: Vec<isize>, input: isize) -> isize {
-        let mut pipeline: Vec<Box<dyn PipelinePart>> = Vec::new();
-        for (i, s) in settings.iter().enumerate() {
-            pipeline.push(Box::new(IntCode {
-                program: program.to_vec(),
-                input_queue: VecDeque::from(vec![*s]),
-                previous: match i {
-                    0 => None,
-                    _ => Some(i - 1),
-                },
-                ..Default::default()
-            }));
-        }
-        pipeline[0].push_input(input);
-        run_pipe(&mut pipeline).expect("something went wrong");
-        pipeline[settings.len() - 1].pop_output()
-    }
-
-    #[test_case( vec![3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26,27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5],
-    vec![9,8,7,6,5], 0 => 139629729 ; "day 7 example 4")]
-    #[test_case( vec![3,52,1001,52,-5,52,3,53,1,52,56,54,1007,54,5,55,1005,55,26,1001,54,-5,54,1105,1,12,1,53,54,53,1008,54
-    ,0,55,1001,55,1,55,2,53,55,53,4,53,1001,56,-1,56,1005,56,6,99,0,0,0,0,10], vec![9,7,8,5,6], 0 => 18216 ; "day 7 example 5")]
-    fn amp_chain_feedback(program: Vec<isize>, settings: Vec<isize>, input: isize) -> isize {
-        let mut pipeline: Vec<Box<dyn PipelinePart>> = Vec::new();
-        for (i, s) in settings.iter().enumerate() {
-            pipeline.push(Box::new(IntCode {
-                program: program.to_vec(),
-                input_queue: VecDeque::from(vec![*s]),
-                previous: match i {
-                    0 => Some(settings.len() - 1),
-                    _ => Some(i - 1),
-                },
-                ..Default::default()
-            }));
-        }
-        pipeline[0].push_input(input);
-        run_pipe(&mut pipeline).expect("something went wrong");
-        pipeline[settings.len() - 1].pop_output()
     }
 }

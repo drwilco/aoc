@@ -19,7 +19,7 @@ where
 
 #[derive(Debug)]
 struct Rule<'a> {
-    name: &'a str,
+    _name: &'a str,
     low_min: usize,
     low_max: usize,
     high_min: usize,
@@ -39,7 +39,7 @@ fn parse_rule(input: &str) -> IResult<&str, Rule> {
     Ok((
         input,
         Rule {
-            name,
+            _name: name,
             low_min,
             low_max,
             high_min,

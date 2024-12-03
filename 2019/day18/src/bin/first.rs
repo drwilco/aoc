@@ -1,11 +1,8 @@
-use rayon::prelude::*;
 use std::char;
 use std::collections::HashMap;
 use std::fs;
 use std::io;
 use std::ops;
-use std::thread;
-use std::time::Duration;
 use std::usize;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -69,7 +66,7 @@ impl ops::AddAssign<Direction> for Point {
 enum TileType {
     Wall,
     Open,
-    Start,
+    _Start,
     Door(char),
     Key(char),
     Checked,
@@ -106,7 +103,7 @@ fn string_to_data(string: &str) -> (TileMap, MapIndex, Point) {
                 map.insert(point, TileType::Door(c));
                 index.insert(TileType::Door(c), point);
             }
-            '\n' => (),
+            '\n' | '\r' => (),
             _ => panic!("unexpected character: {:?}", c),
         }
         if c == '\n' {
@@ -119,7 +116,7 @@ fn string_to_data(string: &str) -> (TileMap, MapIndex, Point) {
     (map, index, start.unwrap())
 }
 
-fn show_map(map: &TileMap) {
+fn _show_map(map: &TileMap) {
     println!();
     println!();
     let min_x = map.keys().map(|p| p.x).min().unwrap();
@@ -135,7 +132,7 @@ fn show_map(map: &TileMap) {
                 Some(TileType::Key(c)) => *c,
                 Some(TileType::Door(c)) => *c,
                 Some(TileType::Checked) => ' ',
-                Some(TileType::Start) => '@',
+                Some(TileType::_Start) => '@',
                 None => ' ',
             };
             print!("{}", character);

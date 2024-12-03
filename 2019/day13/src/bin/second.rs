@@ -46,18 +46,6 @@ struct Point {
   y: isize,
 }
 
-#[derive(Debug)]
-enum Direction {
-  Up,
-  Right,
-  Down,
-  Left,
-}
-
-impl Default for Direction {
-  fn default() -> Self { Direction::Up }
-}
-
 trait PipelinePart {
   fn get_input_queue(&self) -> VecDeque<isize>;
   fn get_output_queue(&self) -> VecDeque<isize>;
@@ -337,8 +325,8 @@ fn show_screen(console: &mut Console) {
 }
 
 fn cheat(console: &mut Console) {
-  let paddle_x: isize = console.screen.iter().filter(|(&p, &t)| t == 3).map(|(&p, _)| p.x).sum();
-  let ball_x: isize = console.screen.iter().filter(|(&p, &t)| t == 4).map(|(&p, _)| p.x).sum();
+  let paddle_x: isize = console.screen.iter().filter(|(_, &t)| t == 3).map(|(&p, _)| p.x).sum();
+  let ball_x: isize = console.screen.iter().filter(|(_, &t)| t == 4).map(|(&p, _)| p.x).sum();
   thread::sleep(Duration::from_millis(50));
   console.output_queue.truncate(0);
   console.output_queue.push_back(match paddle_x.cmp(&ball_x) {

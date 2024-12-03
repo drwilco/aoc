@@ -229,22 +229,10 @@ impl PipelinePart for IntCode {
 enum TileType {
     Scaffold,
     Open,
-    Intersection,
+    _Intersection,
 }
 
 type TileMap = HashMap<Point, TileType>;
-
-#[derive(Debug, PartialEq)]
-enum DroneState {
-    Init,
-    GetResult,
-}
-
-impl Default for DroneState {
-    fn default() -> Self {
-        DroneState::Init
-    }
-}
 
 #[derive(Debug, Default)]
 struct Camera {
@@ -254,9 +242,7 @@ struct Camera {
     previous: Option<usize>,
     map: TileMap,
     position: Point,
-    internal_state: DroneState,
     draw_counter: usize,
-    oxygen_start: Option<Point>,
     bot_position: Point,
     bot_direction: Direction,
     run_driver: bool,
@@ -300,10 +286,6 @@ struct BotDriver {
     state: PartState,
     previous: Option<usize>,
     map: TileMap,
-    position: Point,
-    direction: Direction,
-    internal_state: DroneState,
-    draw_counter: usize,
     bot_position: Point,
     bot_direction: Direction,
 }
@@ -334,7 +316,7 @@ impl PipelinePart for BotDriver {
         self.state = run_driver(self);
     }
     fn broken_pipe(&mut self) {
-        self.state = exit_driver(self);
+        self.state = exit_driver();
     }
 }
 
@@ -514,7 +496,7 @@ fn show_map(camera: &mut Camera, force: bool) {
             } else {
                 match tile {
                     Some(TileType::Scaffold) => '#',
-                    Some(TileType::Intersection) => 'O',
+                    Some(TileType::_Intersection) => 'O',
                     Some(TileType::Open) => '.',
                     None => ' ',
                 }
@@ -577,28 +559,6 @@ fn is_scaffold(map: &TileMap, mut tile: Point, to: Direction) -> bool {
     false
 }
 
-fn find_intersections(map: &mut TileMap) {
-    let mut intersections: Vec<Point> = Vec::new();
-    let mut alignment = 0;
-    for (tile, _) in map
-        .iter()
-        .filter(|(_, tiletype)| **tiletype == TileType::Scaffold)
-    {
-        if is_scaffold(&map, *tile, Direction::North)
-            && is_scaffold(&map, *tile, Direction::South)
-            && is_scaffold(&map, *tile, Direction::East)
-            && is_scaffold(&map, *tile, Direction::West)
-        {
-            intersections.push(*tile);
-        }
-    }
-    for tile in intersections {
-        map.insert(tile, TileType::Intersection);
-        alignment += tile.x * tile.y;
-    }
-    println!("alignment: {}", alignment);
-}
-
 fn exit_camera(camera: &mut Camera) -> PartState {
     show_map(camera, true);
     println!("bot: {:?} {:?}", camera.bot_direction, camera.bot_position);
@@ -635,7 +595,7 @@ fn run_driver(driver: &mut BotDriver) -> PartState {
     let mut steps: Vec<(Turn, usize)> = Vec::new();
     loop {
         println!("loop");
-        let mut turn = if is_scaffold(&driver.map, driver.bot_position, driver.bot_direction + Turn::Left) {
+        let turn = if is_scaffold(&driver.map, driver.bot_position, driver.bot_direction + Turn::Left) {
             Some(Turn::Left)
         } else if is_scaffold(&driver.map, driver.bot_position, driver.bot_direction + Turn::Right) {
             Some(Turn::Right)
@@ -667,7 +627,7 @@ y
     PartState::Exit
 }
 
-fn exit_driver(driver: &mut BotDriver) -> PartState {
+fn exit_driver() -> PartState {
     PartState::Exit
 }
 
