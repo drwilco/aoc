@@ -1,6 +1,6 @@
 use std::fs;
 
-pub fn run(input: &str) -> i64 {
+fn run(input: &str) -> i64 {
     0
 }
 
@@ -16,6 +16,6 @@ mod tests {
 
     #[test_case("Hello world!" => 0)]
     fn test(input: &str) -> i64 {
-        run(&input)
+        run(input)
     }
 }
