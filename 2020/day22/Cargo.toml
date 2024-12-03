@@ -9,3 +9,4 @@ edition = "2018"
 [dependencies]
 anyhow = "1.0.35"
 nom = "6.0.1"
+test-case = "3.3.1"

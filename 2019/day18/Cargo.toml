@@ -10,5 +10,5 @@ edition = "2018"
 rayon = "1.2"
 
 [dev-dependencies]
-test-case = "0.3.3"
+test-case = "3.3.1"
 
