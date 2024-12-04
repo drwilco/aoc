@@ -1,5 +1,5 @@
 [package]
-name = "day18"
+name = "aoc2022day18"
 version = "0.1.0"
 authors = ["Rogier 'DocWilco' Mulhuijzen <github@bsdchicks.com>"]
 edition = "2021"
@@ -9,4 +9,4 @@ edition = "2021"
 [dependencies]
 lazy_static = "1.4.0"
 nom = "7.1.1"
-test-case = "1.0.0"
+test-case = "3.3.1"

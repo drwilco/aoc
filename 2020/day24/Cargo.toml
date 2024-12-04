@@ -1,5 +1,5 @@
 [package]
-name = "aoc202024"
+name = "aoc2020day24"
 version = "0.1.0"
 authors = ["Rogier 'DocWilco' Mulhuijzen <github@bsdchicks.com>"]
 edition = "2018"
@@ -10,4 +10,4 @@ edition = "2018"
 anyhow = "1.0.35"
 itertools = "0.9.0"
 nom = "6.0.1"
-test-case = "1.0.0"
+test-case = "3.3.1"

@@ -1,5 +1,5 @@
 [package]
-name = "aoc202013"
+name = "aoc2020day13"
 version = "0.1.0"
 authors = ["Rogier 'DocWilco' Mulhuijzen <github@bsdchicks.com>"]
 edition = "2018"
@@ -8,4 +8,4 @@ edition = "2018"
 
 [dependencies]
 anyhow = "1.0.35"
-test-case = "1.0.0"
+test-case = "3.3.1"

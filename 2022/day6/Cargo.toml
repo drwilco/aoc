@@ -8,4 +8,4 @@ edition = "2021"
 
 [dependencies]
 itertools = "0.10"
-test-case = "1.0"
+test-case = "3.3.1"

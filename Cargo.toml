@@ -1,3 +1,4 @@
 [workspace]
-members = ["20*/day*", "template"]
+members = ["20*/day*", "cargo-aoc", "template"]
+default-members = ["cargo-aoc"]
 resolver = "2"
