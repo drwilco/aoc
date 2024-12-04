@@ -5,7 +5,7 @@ use nom::bytes::complete::tag;
 use nom::character::complete::{digit1, space1, alpha1};
 use nom::combinator::map;
 use nom::sequence::pair;
-use nom::multi::separated_nonempty_list;
+use nom::multi::separated_list1;
 use nom::IResult;
 
 #[derive(Debug, Default, Clone)]
@@ -33,7 +33,7 @@ fn parse_input(input: &str) -> IResult<&str, Input> {
 }
 
 fn parse_reaction(input: &str) -> IResult<&str, (String, Reaction)> {
-  let (input, inputs) = separated_nonempty_list(pair(tag(","), space1), parse_input)(input)?;
+  let (input, inputs) = separated_list1(pair(tag(","), space1), parse_input)(input)?;
   let (input, _) = space1(input)?;
   let (input, _) = tag("=>")(input)?;
   let (input, _) = space1(input)?;
