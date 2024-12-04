@@ -1,5 +1,5 @@
 [package]
-name = "aoc2024day2"
+name = "aoc2024day4"
 version = "0.1.0"
 authors = ["Rogier 'DocWilco' Mulhuijzen <github@bsdchicks.com>"]
 edition = "2021"
@@ -7,4 +7,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-test-case = "1.0.0"
+criterion = "0.5.1"
+itertools = "0.13.0"
+ndarray = "0.16.1"
+test-case = "3.3.1"
