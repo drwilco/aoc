@@ -5,12 +5,12 @@ use std::fs;
 
 fn run(input: &str) -> usize {
     let (elements, (Some(width), height)) = input.lines().fold(
-        (Vec::with_capacity(input.len()), (None, 0)),
+        (Vec::<u8>::with_capacity(input.len()), (None, 0)),
         |(mut chars, (mut width, height)), line| {
             if width.is_none() {
                 width = Some(line.len());
             }
-            chars.extend(line.chars());
+            chars.extend(line.as_bytes());
             (chars, (width, height + 1))
         },
     ) else {
@@ -21,7 +21,7 @@ fn run(input: &str) -> usize {
         .into_iter()
         .filter(|window| {
             let center = window[[1, 1]];
-            if center != 'A' {
+            if center != b'A' {
                 return false;
             }
             let corners = [
@@ -30,10 +30,10 @@ fn run(input: &str) -> usize {
                 window[[2, 0]],
                 window[[2, 2]],
             ];
-            corners == ['M', 'M', 'S', 'S']
-                || corners == ['S', 'M', 'M', 'S']
-                || corners == ['S', 'S', 'M', 'M']
-                || corners == ['M', 'S', 'S', 'M']
+                   corners == [b'M', b'M', b'S', b'S']
+                || corners == [b'S', b'M', b'M', b'S']
+                || corners == [b'S', b'S', b'M', b'M']
+                || corners == [b'M', b'S', b'S', b'M']
         })
         .count()
 }
