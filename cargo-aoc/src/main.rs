@@ -66,7 +66,13 @@ fn main() -> Result<()> {
     // Get year and day from current date
     let now = Zoned::now();
     let year = now.year();
-    let day = args()
+    dbg!(args().collect::<Vec<_>>());
+    let mut args = args().peekable();
+    args.next();
+    if let Some("aoc") = args.peek().map(|s| s.as_str()) {
+        args.next();
+    }
+    let day = args
         .nth(1)
         .map(|s| s.parse().expect("argument needs to be an integer"))
         .unwrap_or(now.day());
