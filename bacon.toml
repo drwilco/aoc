@@ -57,6 +57,7 @@ on_success = "back" # so that we don't open the browser at each change
 [jobs.run]
 command = [
     "cargo", "run",
+    "--release",
     "--color", "always",
     # put launch parameters for your program behind a `--` separator
 ]
@@ -66,6 +67,7 @@ allow_warnings = true
 [jobs.first]
 command = [
     "cargo", "run",
+    "--release",
     "--color", "always",
     "--bin", "first",
 ]
@@ -75,6 +77,7 @@ allow_warnings = true
 [jobs.second]
 command = [
     "cargo", "run",
+    "--release",
     "--color", "always",
     "--bin", "second",
 ]
