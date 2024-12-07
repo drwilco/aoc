@@ -52,7 +52,7 @@ fn download_input(input_path: impl AsRef<Path>, year: i16, day: i8) -> Result<()
 }
 
 fn main() -> Result<()> {
-    dotenvy::dotenv()?;
+    dotenvy::dotenv().expect("failed to load .env file");
 
     // Run `cargo metadata --format-version 1` to get the workspace root
     let workspace_root = serde_json::from_slice::<Metadata>(
@@ -66,7 +66,6 @@ fn main() -> Result<()> {
     // Get year and day from current date
     let now = Zoned::now();
     let year = now.year();
-    dbg!(args().collect::<Vec<_>>());
     let mut args = args().peekable();
     args.next();
     if let Some("aoc") = args.peek().map(|s| s.as_str()) {
