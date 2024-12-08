@@ -1,15 +1,12 @@
 #![feature(test)]
 
-use std::{
-    collections::{HashMap, HashSet},
-    fs,
-};
+use std::{collections::HashMap, fs};
 
 use itertools::Itertools;
 
 #[derive(Debug, Default)]
 struct FrequencyMaps {
-    maps: HashMap<char, HashSet<(i32, i32)>>,
+    maps: HashMap<char, Vec<(i32, i32)>>,
     width: i32,
     height: i32,
 }
@@ -29,7 +26,7 @@ fn parse_input(input: &str) -> FrequencyMaps {
                 continue;
             }
             let map = freq_maps.maps.entry(character).or_default();
-            map.insert((x, y));
+            map.push((x, y));
         }
     }
     freq_maps.width = width.unwrap();
