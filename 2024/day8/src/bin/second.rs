@@ -42,26 +42,16 @@ fn run(input: &str) -> usize {
         .maps
         .into_iter()
         .flat_map(|(_, positions)| {
-            positions
-                .into_iter()
-                .permutations(2)
-                .flat_map(|positions| {
-                    let (x1, y1) = positions[0];
-                    let (x2, y2) = positions[1];
-                    let (dx, dy) = (x2 - x1, y2 - y1);
-                    let mut results = vec![(x1, y1)];
-                    let (mut anti_x, mut anti_y) = (x1 - dx, y1 - dy);
-                    while anti_x >= 0
-                        && anti_y >= 0
-                        && anti_x < freq_maps.width
-                        && anti_y < freq_maps.height
-                    {
-                        results.push((anti_x, anti_y));
-                        anti_x -= dx;
-                        anti_y -= dy;
-                    }
-                    results
-                })
+            positions.into_iter().permutations(2).flat_map(|positions| {
+                let (x1, y1) = positions[0];
+                let (x2, y2) = positions[1];
+                let (dx, dy) = (x2 - x1, y2 - y1);
+                (0..)
+                    .map(move |multiplier| (x1 - (multiplier * dx), y1 - (multiplier * dy)))
+                    .take_while(|(x, y)| {
+                        *x >= 0 && *y >= 0 && *x < freq_maps.width && *y < freq_maps.height
+                    })
+            })
         })
         .sorted()
         .dedup()
