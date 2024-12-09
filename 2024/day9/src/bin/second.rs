@@ -2,8 +2,9 @@
 
 use enum_dispatch::enum_dispatch;
 use itertools::Itertools;
-use std::{cell::Cell, collections::VecDeque, fs, iter::once, rc::Rc};
+use std::{cell::Cell, collections::VecDeque, fs, rc::Rc};
 
+#[cfg(debug_assertions)]
 #[enum_dispatch]
 trait Start {
     fn start(&self) -> usize;
@@ -16,6 +17,7 @@ struct File {
     length: usize,
 }
 
+#[cfg(debug_assertions)]
 impl Start for File {
     fn start(&self) -> usize {
         self.start
@@ -28,6 +30,7 @@ struct Empty {
     length: usize,
 }
 
+#[cfg(debug_assertions)]
 impl Start for Empty {
     fn start(&self) -> usize {
         self.start
@@ -96,20 +99,28 @@ fn defrag(spans: Vec<Span>) -> Vec<Span> {
         // Find all freelists that have a span that is as big or bigger than the
         // file
         let empty = freelists[file.length..]
-            .iter()
-            .filter_map(|list| list.front())
-            .reduce(|a, b| if a.start < b.start { a } else { b })
-            .map(Clone::clone);
+            .iter_mut()
+            .filter_map(|list| {
+                list.front().copied().and_then(|empty| {
+                    if empty.start < file.start {
+                        Some(empty)
+                    } else {
+                        list.clear();
+                        None
+                    }
+                })
+            })
+            .reduce(|a, b| if a.start < b.start { a } else { b });
         let Some(mut empty) = empty else {
             if file.length == 1 {
                 break;
-            } else {
-                continue;
             }
+            continue;
         };
         // Remove the empty span from the freelists
         let actual_empty = freelists[empty.length].pop_front().unwrap();
         assert_eq!(empty, actual_empty);
+        assert!(empty.start < file.start);
         // Move the file to the empty span
         let new_empty = Empty {
             start: file.start,
@@ -129,43 +140,52 @@ fn defrag(spans: Vec<Span>) -> Vec<Span> {
         }
         new_free.push_back(new_empty);
     }
+    #[cfg(not(debug_assertions))]
+    {
+        files.into_iter().map(Span::File).collect()
+    }
+    #[cfg(debug_assertions)]
+    {
+        // We moved from back to front, so all new free spans are in reverse order
+        new_free.make_contiguous().reverse();
 
-    // We moved from back to front, so all new free spans are in reverse order
-    new_free.make_contiguous().reverse();
+        // Merge all freelists and the new free spans into one iterator
+        let remaining_free = freelists
+            .into_iter()
+            .chain(std::iter::once(new_free))
+            .kmerge_by(|a, b| a.start < b.start)
+            .coalesce(|a, b| {
+                if a.start + a.length == b.start {
+                    Ok(Empty {
+                        start: a.start,
+                        length: a.length + b.length,
+                    })
+                } else {
+                    Err((a, b))
+                }
+            });
 
-    // Merge all freelists and the new free spans into one iterator
-    let remaining_free = freelists
-        .into_iter()
-        .chain(once(new_free))
-        .kmerge_by(|a, b| a.start < b.start)
-        .coalesce(|a, b| {
-            if a.start + a.length == b.start {
-                Ok(Empty {
-                    start: a.start,
-                    length: a.length + b.length,
-                })
-            } else {
-                Err((a, b))
-            }
-        });
+        // The files are still in original order, just their start has changed
+        files.sort_unstable_by_key(|file| file.start);
 
-    // The files are still in original order, just their start has changed
-    files.sort_unstable_by_key(|file| file.start);
-
-    let iters: [Box<dyn Iterator<Item = Span>>; 2] = [
-        Box::new(files.into_iter().map(Span::File)),
-        Box::new(remaining_free.map(Span::Empty)),
-    ];
-    iters.into_iter().kmerge_by(|a, b| a.start() < b.start()).collect()
+        let iters: [Box<dyn Iterator<Item = Span>>; 2] = [
+            Box::new(files.into_iter().map(Span::File)),
+            Box::new(remaining_free.map(Span::Empty)),
+        ];
+        iters
+            .into_iter()
+            .kmerge_by(|a, b| a.start() < b.start())
+            .collect()
+    }
 }
 
 fn checksum(spans: &[Span]) -> usize {
     spans
         .iter()
         .filter_map(|span| match span {
-            Span::File(file) => Some((file.start..(file.start + file.length)).map(move |i| {
-                i * file.id
-            })),
+            Span::File(file) => {
+                Some((file.start..(file.start + file.length)).map(move |i| i * file.id))
+            }
             Span::Empty(_) => None,
         })
         .flatten()
@@ -245,9 +265,12 @@ mod tests {
         Span::File(File { id: 8, start: 36, length: 4 }),
         Span::Empty(Empty { start: 40, length: 2 }),
     ]; "example")]
+    #[test_case("55" => vec![
+        Span::File(File { id: 0, start: 0, length: 5 }),
+        Span::Empty(Empty { start: 5, length: 5 }),
+    ]; "move left only")]
     fn test_defrag(input: &str) -> Vec<Span> {
         let spans = parse_input(input);
-        let spans = defrag(spans);
-        spans
+        defrag(spans)
     }
 }
