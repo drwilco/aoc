@@ -2,8 +2,17 @@
 
 use std::fs;
 
-fn run(input: &str) -> i64 {
+fn parse_input(input: &str) -> usize {
     0
+}
+
+fn solve(input: usize) -> usize {
+    input
+}
+
+#[must_use]
+pub fn run(input: &str) -> usize {
+    solve(parse_input(input))
 }
 
 fn main() {
@@ -19,14 +28,21 @@ mod tests {
     use test_case::test_case;
 
     #[bench]
-    fn my_benchmark(b: &mut Bencher) {
+    fn bench_parse(b: &mut Bencher) {
         let input = fs::read_to_string("input.txt").unwrap();
         let input = black_box(&input);
-        b.iter(|| run(input));
+        b.iter(|| parse_input(input));
+    }
+
+    #[bench]
+    fn bench_solve(b: &mut Bencher) {
+        let input = parse_input(&fs::read_to_string("input.txt").unwrap());
+        let input = black_box(input);
+        b.iter(|| solve(input));
     }
 
     #[test_case("Hello world!" => 0)]
-    fn test(input: &str) -> i64 {
+    fn test(input: &str) -> usize {
         run(input)
     }
 }
