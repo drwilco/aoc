@@ -51,6 +51,7 @@ impl Add<(isize, isize)> for Coordinates {
     }
 }
 
+#[must_use]
 pub fn run(input: &str) -> usize {
     let (grid, nines) = parse_input(input);
     solve(&nines, &grid)

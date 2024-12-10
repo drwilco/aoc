@@ -51,6 +51,7 @@ impl Add<(isize, isize)> for Coordinates {
     }
 }
 
+#[must_use]
 pub fn run(input: &str) -> usize {
     let (grid, previous_coords) = parse_input(input);
     let mut previous_coords = previous_coords
