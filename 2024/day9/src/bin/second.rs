@@ -1,14 +1,7 @@
 #![feature(test)]
 
-use enum_dispatch::enum_dispatch;
 use itertools::Itertools;
 use std::{cell::Cell, collections::VecDeque, fs, rc::Rc};
-
-#[cfg(debug_assertions)]
-#[enum_dispatch]
-trait Start {
-    fn start(&self) -> usize;
-}
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct File {
@@ -17,27 +10,12 @@ struct File {
     length: usize,
 }
 
-#[cfg(debug_assertions)]
-impl Start for File {
-    fn start(&self) -> usize {
-        self.start
-    }
-}
-
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct Empty {
     start: usize,
     length: usize,
 }
 
-#[cfg(debug_assertions)]
-impl Start for Empty {
-    fn start(&self) -> usize {
-        self.start
-    }
-}
-
-#[enum_dispatch(Start)]
 #[derive(Debug, PartialEq)]
 enum Span {
     File(File),
@@ -102,10 +80,12 @@ fn defrag(spans: Vec<Span>) -> Vec<Span> {
             .iter_mut()
             .filter_map(|list| {
                 list.front().copied().and_then(|empty| {
+                    // We can have free space to the right of the file, but we
+                    // only move left
                     if empty.start < file.start {
                         Some(empty)
                     } else {
-                        list.clear();
+                        new_free.append(list);
                         None
                     }
                 })
@@ -119,13 +99,8 @@ fn defrag(spans: Vec<Span>) -> Vec<Span> {
         };
         // Remove the empty span from the freelists
         let actual_empty = freelists[empty.length].pop_front().unwrap();
-        assert_eq!(empty, actual_empty);
-        assert!(empty.start < file.start);
-        // Move the file to the empty span
-        let new_empty = Empty {
-            start: file.start,
-            length: file.length,
-        };
+        debug_assert_eq!(empty, actual_empty);
+        debug_assert!(empty.start < file.start);
         file.start = empty.start;
         // Remove space from the empty span
         empty.start += file.length;
@@ -138,45 +113,8 @@ fn defrag(spans: Vec<Span>) -> Vec<Span> {
                 .make_contiguous()
                 .sort_unstable_by_key(|empty| empty.start);
         }
-        new_free.push_back(new_empty);
     }
-    #[cfg(not(debug_assertions))]
-    {
-        files.into_iter().map(Span::File).collect()
-    }
-    #[cfg(debug_assertions)]
-    {
-        // We moved from back to front, so all new free spans are in reverse order
-        new_free.make_contiguous().reverse();
-
-        // Merge all freelists and the new free spans into one iterator
-        let remaining_free = freelists
-            .into_iter()
-            .chain(std::iter::once(new_free))
-            .kmerge_by(|a, b| a.start < b.start)
-            .coalesce(|a, b| {
-                if a.start + a.length == b.start {
-                    Ok(Empty {
-                        start: a.start,
-                        length: a.length + b.length,
-                    })
-                } else {
-                    Err((a, b))
-                }
-            });
-
-        // The files are still in original order, just their start has changed
-        files.sort_unstable_by_key(|file| file.start);
-
-        let iters: [Box<dyn Iterator<Item = Span>>; 2] = [
-            Box::new(files.into_iter().map(Span::File)),
-            Box::new(remaining_free.map(Span::Empty)),
-        ];
-        iters
-            .into_iter()
-            .kmerge_by(|a, b| a.start() < b.start())
-            .collect()
-    }
+    files.into_iter().map(Span::File).collect()
 }
 
 fn checksum(spans: &[Span]) -> usize {
@@ -243,31 +181,23 @@ mod tests {
     // 000002111......
     #[test_case("54321" => vec![
         Span::File(File { id: 0, start: 0, length: 5 }),
-        Span::File(File { id: 2, start: 5, length: 1 }),
         Span::File(File { id: 1, start: 6, length: 3 }),
-        Span::Empty(Empty { start: 9, length: 6 }),
+        Span::File(File { id: 2, start: 5, length: 1 }),
     ]; "small test")]
     #[test_case("2333133121414131402" => vec![
         Span::File(File { id: 0, start: 0, length: 2 }),
-        Span::File(File { id: 9, start: 2, length: 2 }),
-        Span::File(File { id: 2, start: 4, length: 1 }),
         Span::File(File { id: 1, start: 5, length: 3 }),
-        Span::File(File { id: 7, start: 8, length: 3 }),
-        Span::Empty(Empty { start: 11, length: 1 }),
-        Span::File(File { id: 4, start: 12, length: 2 }),
-        Span::Empty(Empty { start: 14, length: 1 }),
+        Span::File(File { id: 2, start: 4, length: 1 }),
         Span::File(File { id: 3, start: 15, length: 3 }),
-        Span::Empty(Empty { start: 18, length: 4 }),
+        Span::File(File { id: 4, start: 12, length: 2 }),
         Span::File(File { id: 5, start: 22, length: 4 }),
-        Span::Empty(Empty { start: 26, length: 1 }),
         Span::File(File { id: 6, start: 27, length: 4 }),
-        Span::Empty(Empty { start: 31, length: 5 }),
+        Span::File(File { id: 7, start: 8, length: 3 }),
         Span::File(File { id: 8, start: 36, length: 4 }),
-        Span::Empty(Empty { start: 40, length: 2 }),
+        Span::File(File { id: 9, start: 2, length: 2 }),
     ]; "example")]
     #[test_case("55" => vec![
         Span::File(File { id: 0, start: 0, length: 5 }),
-        Span::Empty(Empty { start: 5, length: 5 }),
     ]; "move left only")]
     fn test_defrag(input: &str) -> Vec<Span> {
         let spans = parse_input(input);

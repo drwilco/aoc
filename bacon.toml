@@ -67,7 +67,6 @@ allow_warnings = true
 [jobs.first]
 command = [
     "cargo", "run",
-    "--release",
     "--color", "always",
     "--bin", "first",
 ]
@@ -75,6 +74,25 @@ need_stdout = true
 allow_warnings = true
 
 [jobs.second]
+command = [
+    "cargo", "run",
+    "--color", "always",
+    "--bin", "second",
+]
+need_stdout = true
+allow_warnings = true
+
+[jobs.first-release]
+command = [
+    "cargo", "run",
+    "--release",
+    "--color", "always",
+    "--bin", "first",
+]
+need_stdout = true
+allow_warnings = true
+
+[jobs.second-release]
 command = [
     "cargo", "run",
     "--release",
@@ -100,4 +118,6 @@ allow_warnings = true
 p = "job:pedantic"
 f = "job:first"
 s = "job:second"
+shift-f = "job:first-release"
+shift-s = "job:second-release"
 k = "job:benchmark"
