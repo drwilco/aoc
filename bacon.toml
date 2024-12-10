@@ -109,6 +109,13 @@ command = [
 need_stdout = true
 allow_warnings = true
 
+[jobs.machete]
+command = [
+    "cargo", "machete",
+]
+need_stdout = true
+allow_warnings = true
+
 # You may define here keybindings that would be specific to
 # a project, for example a shortcut to launch a specific job.
 # Shortcuts to internal functions (scrolling, toggling, etc.)
@@ -121,3 +128,4 @@ s = "job:second"
 shift-f = "job:first-release"
 shift-s = "job:second-release"
 k = "job:benchmark"
+m = "job:machete"
