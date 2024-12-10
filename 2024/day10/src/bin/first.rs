@@ -80,8 +80,7 @@ fn solve(
                     None
                 }
             })
-            // Multiple paths can lead to the same coordinate, so we combine
-            // them, but they can lead to the same 9, so dedup
+            // Multiple paths can lead from one spot to the same peak, so merge what they can reach
             .sorted_unstable_by_key(|(coords, _)| *coords)
             .coalesce(|(coords1, reachable1), (coords2, reachable2)| {
                 if coords1 == coords2 {

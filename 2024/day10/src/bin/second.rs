@@ -71,8 +71,14 @@ pub fn run(input: &str) -> usize {
                     None
                 }
             })
-            // Multiple paths can lead to the same coordinate, so we combine
-            // them, but they can lead to the same 9, so dedup
+            // Instead of tracking what we can reach, just sum the ratings:
+            //
+            // .98
+            // 987
+            //
+            // Both 8s can reach the upper nine, but the lower 8 can reach both
+            // 9s. The lower 8 has a rating of 2, the upper a rating of 1.
+            // Meaning the 7 has a rating of 2 + 1 = 3.
             .sorted_unstable_by_key(|(coords, _)| *coords)
             .coalesce(|(coords1, rating1), (coords2, rating2)| {
                 if coords1 == coords2 {
