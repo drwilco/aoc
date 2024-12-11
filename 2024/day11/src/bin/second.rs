@@ -83,9 +83,9 @@ mod tests {
         parse_input(input)
     }
 
-    #[test_case(vec![125, 17], 6 => 22; "example 1")]
-    #[test_case(vec![125, 17], 25 => 55312; "example 2")]
-    fn test_solve(input: Vec<u64>, blinks: usize) -> usize {
-        solve(&input, blinks)
+    #[test_case(&[125, 17], 6 => 22; "example 1")]
+    #[test_case(&[125, 17], 25 => 55312; "example 2")]
+    fn test_solve(input: &[u64], blinks: usize) -> usize {
+        solve(input, blinks)
     } 
 }
