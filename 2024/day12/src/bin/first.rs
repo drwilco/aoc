@@ -45,6 +45,8 @@ fn calculate_fences(grid: &Array2<u8>) -> Array2<Tile> {
         .indexed_iter()
         .map(|(position, &crop)| {
             let position = Coordinates(position);
+            // the iterator chain finds us the number of neighbors that are the
+            // same crop, so we _don't_ need fences there. Hence 4 - that number
             let fences = 4 - NEIGHBORS
                 .iter()
                 .filter_map(|&neighbor| position + neighbor)
