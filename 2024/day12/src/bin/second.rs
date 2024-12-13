@@ -141,7 +141,7 @@ fn solve(grid: &Array2<u8>) -> usize {
                                 }
                                 let neighbor_position = (current_coords + neighbor_offsets)?;
                                 let neighbor_tile = tiles_with_fences.get(neighbor_position.0)?;
-                                if neighbor_tile.crop != current_tile.crop {
+                                if neighbor_tile.crop != tile.crop {
                                     return None;
                                 }
                                 if !neighbor_tile.checked {
