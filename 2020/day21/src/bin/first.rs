@@ -16,7 +16,7 @@ struct Food<'a> {
 }
 
 impl<'a> Food<'a> {
-    fn parse(input: &'a str) -> IResult<&str, Self> {
+    fn parse(input: &'a str) -> IResult<&'a str, Self> {
         let (input, ingredients) = separated_list1(char(' '), alpha1)(input)?;
         let (input, allergens) = opt(preceded(
             tag(" (contains "),
