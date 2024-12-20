@@ -22,33 +22,24 @@ enum Direction {
 #[derive(Clone, Copy, Debug)]
 struct Coordinates((usize, usize));
 
-impl Add<(isize, isize)> for Coordinates {
-    type Output = Option<Self>;
-
-    fn add(self, rhs: (isize, isize)) -> Self::Output {
-        Some(Coordinates((
-            self.0 .0.checked_add_signed(rhs.0)?,
-            self.0 .1.checked_add_signed(rhs.1)?,
-        )))
-    }
-}
-
 impl Add<Direction> for Coordinates {
-    type Output = Option<Self>;
+    type Output = Self;
 
     fn add(self, rhs: Direction) -> Self::Output {
         match rhs {
-            Direction::Up => self + (-1, 0),
-            Direction::Down => self + (1, 0),
-            Direction::Left => self + (0, -1),
-            Direction::Right => self + (0, 1),
+            // Because we have walls around the grid, we don't need to check for
+            // out-of-bounds
+            Direction::Up => Coordinates((self.0 .0 - 1, self.0 .1)),
+            Direction::Down => Coordinates((self.0 .0 + 1, self.0 .1)),
+            Direction::Left => Coordinates((self.0 .0, self.0 .1 - 1)),
+            Direction::Right => Coordinates((self.0 .0, self.0 .1 + 1)),
         }
     }
 }
 
 fn parse_grid(input: &str) -> (Array2<Tile>, (usize, usize)) {
     let mut lines = input.lines();
-    let width = lines.by_ref().next().unwrap().len();
+    let width = lines.next().unwrap().len();
     let height = lines.count() + 1;
     let mut bot_position = None;
     let mut raw_tiles = Vec::with_capacity(width * height);
@@ -62,7 +53,7 @@ fn parse_grid(input: &str) -> (Array2<Tile>, (usize, usize)) {
                     raw_tiles.push(Tile::Empty);
                 }
                 'O' => raw_tiles.push(Tile::Crate),
-                _ => panic!("Invalid character in grid: {}", c),
+                _ => panic!("Invalid character in grid: {c}"),
             }
         }
     }
@@ -79,7 +70,7 @@ fn parse_commands(input: &str) -> Vec<Direction> {
             '<' => Some(Direction::Left),
             '>' => Some(Direction::Right),
             '\n' | '\r' => None,
-            _ => panic!("Invalid command: {}", c),
+            _ => panic!("Invalid command: {c}"),
         })
         .collect()
 }
@@ -98,10 +89,10 @@ fn execute_commands(
 ) -> Array2<Tile> {
     let mut bot_position = Coordinates(bot_position);
     for &command in commands {
-        let new_position = (bot_position + command).unwrap();
-        let bot_tile = *grid.get(bot_position.0).unwrap();
+        let new_position = bot_position + command;
+        let bot_tile = grid[bot_position.0];
         assert_eq!(bot_tile, Tile::Empty);
-        let new_tile = *grid.get(new_position.0).unwrap();
+        let new_tile = grid[new_position.0];
         match new_tile {
             Tile::Empty => {
                 bot_position = new_position;
@@ -110,17 +101,16 @@ fn execute_commands(
             Tile::Crate => {
                 let mut search = new_position;
                 loop {
-                    search = (search + command).unwrap();
-                    match grid.get(search.0) {
-                        Some(Tile::Immovable) => break,
-                        Some(Tile::Crate) => continue,
-                        Some(Tile::Empty) => {
+                    search = search + command;
+                    match grid[search.0] {
+                        Tile::Immovable => break,
+                        Tile::Crate => continue,
+                        Tile::Empty => {
                             grid[new_position.0] = Tile::Empty;
                             grid[search.0] = Tile::Crate;
                             bot_position = new_position;
                             break;
-                        },
-                        None => panic!("Out of bounds"),
+                        }
                     }
                 }
             }
@@ -131,13 +121,17 @@ fn execute_commands(
 
 fn solve(grid: Array2<Tile>, bot_position: (usize, usize), commands: &[Direction]) -> usize {
     let grid = execute_commands(grid, bot_position, commands);
-    grid.indexed_iter().map(|((y, x), &tile)| {
-        if tile == Tile::Crate {
-            y * 100 + x 
-        } else {
-            0
-        }
-    }).sum()
+    grid.indexed_iter()
+        .map(
+            |((y, x), &tile)| {
+                if tile == Tile::Crate {
+                    y * 100 + x
+                } else {
+                    0
+                }
+            },
+        )
+        .sum()
 }
 
 #[allow(clippy::missing_panics_doc)]
