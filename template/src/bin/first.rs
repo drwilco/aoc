@@ -10,9 +10,11 @@ fn solve(input: usize) -> usize {
     input
 }
 
+#[allow(clippy::missing_panics_doc)]
 #[must_use]
 pub fn run(input: &str) -> usize {
-    solve(parse_input(input))
+    let input = parse_input(input);
+    solve(input)
 }
 
 fn main() {
@@ -36,7 +38,8 @@ mod tests {
 
     #[bench]
     fn bench_solve(b: &mut Bencher) {
-        let input = parse_input(&fs::read_to_string("input.txt").unwrap());
+        let input = fs::read_to_string("input.txt").unwrap();
+        let input = parse_input(&input);
         let input = black_box(input);
         b.iter(|| solve(input));
     }

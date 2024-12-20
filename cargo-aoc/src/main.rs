@@ -40,9 +40,9 @@ fn copy_template(
 fn download_input(input_path: impl AsRef<Path>, year: i16, day: i8) -> Result<()> {
     let client = reqwest::blocking::Client::new();
     let session_cookie = std::env::var("SESSION_COOKIE").expect("SESSION_COOKIE not set");
-    let cookie_header = format!("session={}", session_cookie);
+    let cookie_header = format!("session={session_cookie}");
     let input = client
-        .get(&format!("https://adventofcode.com/{year}/day/{day}/input"))
+        .get(format!("https://adventofcode.com/{year}/day/{day}/input"))
         .header(reqwest::header::COOKIE, cookie_header)
         .send()?
         .error_for_status()?
@@ -57,7 +57,7 @@ fn main() -> Result<()> {
     // Run `cargo metadata --format-version 1` to get the workspace root
     let workspace_root = serde_json::from_slice::<Metadata>(
         &Command::new("cargo")
-            .args(&["metadata", "--format-version", "1"])
+            .args(["metadata", "--format-version", "1"])
             .output()
             .expect("failed to execute process")
             .stdout,
@@ -68,13 +68,12 @@ fn main() -> Result<()> {
     let year = now.year();
     let mut args = args().peekable();
     args.next();
-    if let Some("aoc") = args.peek().map(|s| s.as_str()) {
+    if let Some("aoc") = args.peek().map(String::as_str) {
         args.next();
     }
     let day = args
-        .nth(1)
-        .map(|s| s.parse().expect("argument needs to be an integer"))
-        .unwrap_or(now.day());
+        .next()
+        .map_or(now.day(), |s| s.parse().expect("argument needs to be an integer"));
     let day_dir = workspace_root.join(format!("{year}/day{day}"));
     println!("{}", day_dir.display());
     if !day_dir.exists() {
